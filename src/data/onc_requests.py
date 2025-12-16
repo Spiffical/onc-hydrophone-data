@@ -1,4 +1,5 @@
 import os
+import contextlib
 import time
 import json
 import logging
@@ -32,7 +33,8 @@ class ONCRequestManager:
             logger: Logger instance for status updates.
         """
         self._onc_token = onc_token
-        self.onc = ONC(onc_token)
+        # Initialize ONC client with showInfo=False to rely on our own progress logging
+        self.onc = ONC(onc_token, showInfo=False)
         self.parent_dir = parent_dir
         self.logger = logger
         
@@ -141,12 +143,14 @@ class ONCRequestManager:
         # Step 1: Request the data product
         # This registers the request with ONC
         result = self.onc.requestDataProduct(filters)
+        
         dp_request_id = result['dpRequestId'] if isinstance(result, dict) else result
         self.logger.info(f"Submitted request (no-wait) dpRequestId={dp_request_id} for {device_code}")
 
         # Step 2: Trigger the run
         # This actually starts the processing job. We do not wait for completion here.
         run_data = self.onc.runDataProduct(dp_request_id, waitComplete=False)
+                 
         run_ids = None
         if isinstance(run_data, dict) and 'runIds' in run_data:
             run_ids = run_data['runIds']
@@ -193,7 +197,7 @@ class ONCRequestManager:
         # Create a thread-safe client instance for polling
         # This ensures that if this method is called from multiple threads,
         # we don't share the same client state (though the underlying library might handle it).
-        status_client = ONC(self._onc_token)
+        status_client = ONC(self._onc_token, showInfo=False)
         
         deadline = time.time() + max(0, max_wait_seconds)
         last_payload: List[Dict[str, Any]] = []

@@ -766,7 +766,7 @@ class HydrophoneDownloader:
         # Prepare a per-call ONC client to avoid cross-thread outPath races
         local_out_path = rec.get('outPath')
         if local_out_path:
-            onc_client = ONC(self._onc_token)
+            onc_client = ONC(self._onc_token, showInfo=False)
             onc_client.outPath = local_out_path
             # Ensure directories exist prior to download
             os.makedirs(local_out_path, exist_ok=True)
@@ -868,7 +868,7 @@ class HydrophoneDownloader:
                 self.process_spectrograms('mat')
             if download_flac and rec.get('start') and rec.get('end'):
                 try:
-                    flac_client = ONC(self._onc_token)
+                    flac_client = ONC(self._onc_token, showInfo=False)
                     flac_client.outPath = self.flac_path
                     self.download_flac_files(rec['deviceCode'], rec['start'], rec['end'], onc_client=flac_client)
                     rec['flac_status'] = 'downloaded'
@@ -937,13 +937,13 @@ class HydrophoneDownloader:
         downsample = spectral_downsample if spectral_downsample is not None else self.spectral_downsample
 
         total_windows = len(ordered_windows)
-        self.logger.info(f"Submitting {total_windows} requests for {device_code}...")
+        print(f"Submitting {total_windows} requests for {device_code}...")
 
         wall_start = time.time()
         run_records: List[Dict[str, Any]] = []
         for i, (start_dt, end_dt) in enumerate(ordered_windows, 1):
             if i % 5 == 1 or i == total_windows:
-                 self.logger.info(f"Submitting request {i}/{total_windows}...")
+                 print(f"Submitting request {i}/{total_windows}...")
             
             rec = self.request_manager.submit_mat_run_no_wait(
                 device_code=device_code,
