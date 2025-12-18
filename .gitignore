@@ -29,3 +29,9 @@ output/
 *.flac
 *.png
 *.jpg
+.pypirc
+
+# Build artifacts
+dist/
+build/
+*.egg-info/

@@ -3,7 +3,7 @@ from copy import deepcopy
 from datetime import datetime, timedelta
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
-from src.data.hydrophone_downloader import HydrophoneDownloader
+from onc_hydrophone_data.data.hydrophone_downloader import HydrophoneDownloader
 
 
 DEFAULT_PARALLEL_CONFIG = {

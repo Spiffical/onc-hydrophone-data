@@ -50,9 +50,9 @@ from datetime import datetime, date, timedelta
 
 # Add the utils directory to the path so we can import the HydrophoneDownloader
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from src.data.hydrophone_downloader import HydrophoneDownloader
-from src.onc.common import load_config, print_status
-from src.utils.download_helpers import (
+from onc_hydrophone_data.data.hydrophone_downloader import HydrophoneDownloader
+from onc_hydrophone_data.onc.common import load_config, print_status
+from onc_hydrophone_data.utils.download_helpers import (
     DEFAULT_PARALLEL_CONFIG,
     build_hsd_filters,
     build_sampling_windows,

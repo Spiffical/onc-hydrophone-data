@@ -11,8 +11,8 @@ import shutil
 sys_modules_patch = patch.dict('sys.modules', {'onc': MagicMock(), 'onc.onc': MagicMock()})
 sys_modules_patch.start()
 
-from src.data.onc_requests import ONCRequestManager
-from src.onc.common import format_iso_utc
+from onc_hydrophone_data.data.onc_requests import ONCRequestManager
+from onc_hydrophone_data.onc.common import format_iso_utc
 
 class TestONCRequestManager(unittest.TestCase):
     def setUp(self):

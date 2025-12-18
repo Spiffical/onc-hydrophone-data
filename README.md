@@ -1,64 +1,110 @@
-# 🌊 ONC Data Download and Preparation
+# 🌊 ONC Hydrophone Data Tools
 
-Complete guide for downloading Ocean Networks Canada spectrograms, FLAC audio files, and preparing ML-ready HDF5 datasets.
+[![PyPI version](https://badge.fury.io/py/onc-hydrophone-data.svg)](https://pypi.org/project/onc-hydrophone-data/)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+Tools for downloading and processing Ocean Networks Canada hydrophone data, including spectrograms, FLAC audio files, and custom spectrogram generation.
 
 ## 📋 Table of Contents
 
+- [📦 Installation](#-installation)
 - [🚀 Quick Start](#-quick-start)
-- [⚙️ Setup](#️-setup)
+- [⚙️ Configuration](#️-configuration)
 - [📥 Downloading Spectrograms](#-downloading-spectrograms)
 - [🎵 Downloading FLAC Audio Files](#-downloading-flac-audio-files)
 - [🎶 Custom Spectrogram Generation](#-custom-spectrogram-generation)
+- [💻 Python API](#-python-api)
 - [🔧 Advanced Options](#-advanced-options)
 - [🛠️ Troubleshooting](#️-troubleshooting)
 
-## 🚀 Quick Start
+## 📦 Installation
 
-The **easiest way to get started** is using the tutorial notebook, which runs through several real-world examples:
-- 📓 **[Tutorial Notebook](notebooks/ONC_Data_Download_Tutorial.ipynb)**
-
-### CLI Quick Start
+### Option 1: Install from PyPI (Recommended)
 
 ```bash
-# 1. Interactive download (guided cli) - uses sampling strategy
-#    Now includes option to download FLAC files!
+pip install onc-hydrophone-data
+```
+
+With audio processing extras (torch/torchaudio):
+```bash
+pip install onc-hydrophone-data[audio]
+```
+
+### Option 2: Install from Source (For Development)
+
+```bash
+git clone https://github.com/Spiffical/onc-hydrophone-data.git
+cd onc-hydrophone-data
+pip install -e .
+```
+
+## 🚀 Quick Start
+
+**📓 The easiest way to get started is the [Tutorial Notebook](notebooks/ONC_Data_Download_Tutorial.ipynb)** - interactive examples covering all download scenarios.
+
+### Python API
+
+```python
+from onc_hydrophone_data.onc.common import load_config
+from onc_hydrophone_data.data import HydrophoneDownloader
+from onc_hydrophone_data.audio import SpectrogramGenerator
+
+# Load credentials from .env file (see Configuration section)
+onc_token, data_dir = load_config()
+
+# Download spectrograms
+downloader = HydrophoneDownloader(onc_token, data_dir)
+downloader.download_spectrograms_with_sampling_schedule(
+    deviceCode="ICLISTENHF6020",
+    start_date=(2021, 1, 1),
+    threshold_num=100
+)
+
+# Generate custom spectrograms from audio files
+generator = SpectrogramGenerator(win_dur=2.0, overlap=0.75)
+generator.process_directory("data/DEVICE/flac/", "output/spectrograms/")
+```
+
+### Command Line (requires cloning the repo)
+
+```bash
+# Interactive download (guided cli)
 python scripts/download_hydrophone_data.py
 
-# 2. Direct download with custom batch size
-python scripts/download_hydrophone_data.py --mode sampling --device ICLISTENHF6020 --start-date 2021 1 1 --threshold 500 --spectrograms-per-batch 12 --check-deployments
+# Direct download with parameters
+python scripts/download_hydrophone_data.py --mode sampling --device ICLISTENHF6020 \
+    --start-date 2021 1 1 --threshold 500 --check-deployments
 
-# 3. Download spectrograms WITH corresponding FLAC audio files
-python scripts/download_hydrophone_data.py --mode sampling --device ICLISTENHF6020 --start-date 2021 1 1 --threshold 500 --spectrograms-per-batch 6 --download-flac
+# Download with FLAC audio files
+python scripts/download_hydrophone_data.py --mode sampling --device ICLISTENHF6020 \
+    --start-date 2021 1 1 --threshold 500 --download-flac
 
-# 4. Generate custom spectrograms from FLAC files (NEW!)
+# Generate custom spectrograms from FLAC files
 python scripts/generate_spectrograms.py --input-dir data/ICLISTENHF6020/flac/ --win-dur 2.0
 ```
 
 ## ✨ Key Features
 
-- **🤖 Smart Interactive Mode**: Guided setup that uses the intelligent sampling strategy and includes FLAC audio option
-- **🎵 FLAC Audio Download**: Download corresponding raw audio files alongside spectrograms
-- **🎶 Custom Spectrogram Generation**: Create spectrograms with any duration/parameters from FLAC files
+- **🤖 Smart Interactive Mode**: Guided setup with intelligent sampling strategy
+- **🎵 FLAC Audio Download**: Download raw audio files alongside spectrograms
+- **🎶 Custom Spectrogram Generation**: Create spectrograms with any duration/parameters
 - **🚀 Deployment Validation**: Ensures hydrophones were deployed during requested periods  
 - **📊 Device Discovery**: Browse available hydrophones with deployment information
 - **⏰ Date Validation**: Checks dates fall within active deployment periods
 - **💾 Efficient Caching**: Minimizes API calls through intelligent caching
 - **🔧 Multiple Modes**: Sampling, range, specific times, and deployment checking
-- **📁 Universal Folder Support**: Works with enhanced, flat, and nested folder structures
 
-## ⚙️ Setup
+## ⚙️ Configuration
 
-1. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+Create a `.env` file in your project directory:
 
-2. **Configure ONC API token:**
-   Create/edit `.env` file:
-   ```
-   ONC_TOKEN=your_actual_onc_token_here
-   DATA_DIR=./data
-   ```
+```
+ONC_TOKEN=your_actual_onc_token_here
+DATA_DIR=./data
+```
+
+Get your ONC API token from: https://data.oceannetworks.ca/Profile
 
 ## 📥 Downloading Spectrograms
 
@@ -271,7 +317,7 @@ Unlike ONC's fixed 5-minute spectrograms, you can create any duration by adjusti
 ### 💻 Programmatic Usage
 
 ```python
-from src.audio import SpectrogramGenerator
+from onc_hydrophone_data.audio import SpectrogramGenerator
 
 # Create generator with custom parameters
 generator = SpectrogramGenerator(

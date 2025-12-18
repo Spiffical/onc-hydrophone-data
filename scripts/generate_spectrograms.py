@@ -39,8 +39,8 @@ import logging
 # Add parent directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from src.audio import SpectrogramGenerator, find_audio_files, get_audio_info, estimate_processing_time
-from src.data.config_utils import DatasetConfig
+from onc_hydrophone_data.audio import SpectrogramGenerator, find_audio_files, get_audio_info, estimate_processing_time
+from onc_hydrophone_data.data.config_utils import DatasetConfig
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

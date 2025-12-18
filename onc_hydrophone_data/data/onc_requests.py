@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Tuple
 
 from onc.onc import ONC
-from src.onc.common import start_and_end_strings, format_iso_utc
+from onc_hydrophone_data.onc.common import start_and_end_strings, format_iso_utc
 
 
 class ONCRequestManager:
