@@ -73,7 +73,14 @@ class PrintLogger:
 
 # Helper function to ensure datetime is timezone-aware
 def ensure_timezone_aware(dt_obj, tz=timezone.utc):
-    """Convert timezone-naive datetime to timezone-aware datetime."""
+    """Convert timezone-naive datetime to timezone-aware datetime.
+    
+    Also handles date objects by converting them to datetime at midnight.
+    """
+    # Handle date objects (no time component)
+    if isinstance(dt_obj, date) and not isinstance(dt_obj, datetime):
+        dt_obj = datetime(dt_obj.year, dt_obj.month, dt_obj.day)
+    
     if dt_obj.tzinfo is None:
         return dt_obj.replace(tzinfo=tz)
     return dt_obj
@@ -105,11 +112,15 @@ class HydrophoneDownloader:
         # 4 = 1 day average
         self.spectral_downsample = spectral_downsample
 
-        # Legacy/Flat structure paths (defaults)
-        self.input_path = os.path.join(self.parent_dir, 'mat', '')
-        self.processed_path = os.path.join(self.input_path, 'processed', '')
-        self.anom_path = os.path.join(self.input_path, 'rejects', '')
-        self.flac_path = os.path.join(self.parent_dir, 'flac', '')
+        # Clean flat structure paths (defaults)
+        # ONC spectrograms go to onc_spectrograms/ (no subdirs)
+        self.spectrogram_path = os.path.join(self.parent_dir, 'onc_spectrograms', '')
+        # Keep input_path as alias for backwards compatibility
+        self.input_path = self.spectrogram_path
+        # Audio files go to audio/ (renamed from flac/)
+        self.audio_path = os.path.join(self.parent_dir, 'audio', '')
+        # Keep flac_path as alias for backwards compatibility
+        self.flac_path = self.audio_path
         
         # Lock for thread-safe path modification
         self._path_lock = Lock()
@@ -177,7 +188,8 @@ class HydrophoneDownloader:
         search_dirs: Optional[List[str]] = None,
     ) -> List[Tuple[datetime, str]]:
         """Return sorted list of (start_time, path) overlapping the requested range."""
-        dirs = search_dirs or [self.processed_path, self.input_path, self.anom_path]
+        # Use flat directory structure - just search spectrogram_path
+        dirs = search_dirs or [self.spectrogram_path]
         matches: List[Tuple[datetime, str]] = []
         for base in dirs:
             if not base or not os.path.isdir(base):
@@ -690,32 +702,44 @@ class HydrophoneDownloader:
         return summary
         
     def setup_directories(self, filetype, device_code=None, download_method=None, start_date=None, end_date=None, duration_seconds=None):
-        """Setup directory structure with optional device, method, and date organization"""
+        """Setup clean, flat directory structure with optional device, method, and date organization.
+        
+        New structure (when device_code and download_method provided):
+            data/DEVICE/METHOD_DATES/
+                onc_spectrograms/   # Downloaded ONC spectrograms (flat, no subdirs)
+                audio/              # Downloaded audio files
+                custom_spectrograms/ # Generated locally (by generate_spectrograms.py)
+        
+        Legacy structure (backwards compatibility):
+            data/
+                onc_spectrograms/   # Downloaded ONC spectrograms
+                audio/              # Downloaded audio files
+        """
         if device_code and download_method:
             # Create method folder name with date information
             method_folder = self._create_method_folder_name(download_method, start_date, end_date, duration_seconds)
             
-            # New organized structure: data/DEVICE/METHOD_DATES/
+            # Clean organized structure: data/DEVICE/METHOD_DATES/
             base_path = os.path.join(self.parent_dir, device_code, method_folder)
             
-            # Create mat directory with processed and rejects subdirectories
-            self.input_path = os.path.join(base_path, filetype, '')
-            self.processed_path = os.path.join(self.input_path, 'processed', '')
-            self.anom_path = os.path.join(self.input_path, 'rejects', '')
+            # ONC spectrograms - flat structure (no processed/rejects subdirs)
+            self.spectrogram_path = os.path.join(base_path, 'onc_spectrograms', '')
+            self.input_path = self.spectrogram_path  # Alias for backwards compatibility
             
-            # Create flac directory at the same level as mat
-            self.flac_path = os.path.join(base_path, 'flac', '')
+            # Audio files directory
+            self.audio_path = os.path.join(base_path, 'audio', '')
+            self.flac_path = self.audio_path  # Alias for backwards compatibility
         else:
             # Legacy structure for backwards compatibility
-            self.input_path = os.path.join(self.parent_dir, filetype, '')
-            self.processed_path = os.path.join(self.input_path, 'processed', '')
-            self.anom_path = os.path.join(self.input_path, 'rejects', '')
-            self.flac_path = os.path.join(self.parent_dir, 'flac', '')
+            self.spectrogram_path = os.path.join(self.parent_dir, 'onc_spectrograms', '')
+            self.input_path = self.spectrogram_path
+            self.audio_path = os.path.join(self.parent_dir, 'audio', '')
+            self.flac_path = self.audio_path
         
-        self.onc.outPath = self.input_path
+        self.onc.outPath = self.spectrogram_path
 
-        # Create all necessary directories
-        for folder_path in [self.parent_dir, self.input_path, self.processed_path, self.anom_path, self.flac_path]:
+        # Create all necessary directories (flat structure - no subdirs)
+        for folder_path in [self.parent_dir, self.spectrogram_path, self.audio_path]:
             os.makedirs(folder_path, exist_ok=True)
     
     def _create_method_folder_name(self, download_method, start_date=None, end_date=None, duration_seconds=None):
@@ -768,10 +792,8 @@ class HydrophoneDownloader:
         if local_out_path:
             onc_client = ONC(self._onc_token, showInfo=False)
             onc_client.outPath = local_out_path
-            # Ensure directories exist prior to download
+            # Ensure directory exists prior to download (flat structure, no subdirs)
             os.makedirs(local_out_path, exist_ok=True)
-            os.makedirs(os.path.join(local_out_path, 'processed'), exist_ok=True)
-            os.makedirs(os.path.join(local_out_path, 'rejects'), exist_ok=True)
         else:
             onc_client = self.onc
 
@@ -857,15 +879,14 @@ class HydrophoneDownloader:
                 rec['pendingReason'] = 'waiting-for-mat-files'
                 rec['lastDownloadError'] = 'waiting-for-mat-files'
                 return 'pending', rec
-            # Process downloaded files under a lock to avoid path interference
+            # Validate downloaded files (no longer moving to subdirectories)
             if local_out_path:
                 with self._path_lock:
+                    self.spectrogram_path = local_out_path
                     self.input_path = local_out_path
-                    self.processed_path = os.path.join(local_out_path, 'processed', '')
-                    self.anom_path = os.path.join(local_out_path, 'rejects', '')
-                    self.process_spectrograms('mat')
+                    self.validate_spectrograms('mat')
             else:
-                self.process_spectrograms('mat')
+                self.validate_spectrograms('mat')
             if download_flac and rec.get('start') and rec.get('end'):
                 try:
                     flac_client = ONC(self._onc_token, showInfo=False)
@@ -1043,14 +1064,14 @@ class HydrophoneDownloader:
 
         runs_downloaded = len([r for r in run_records if r.get('status') == 'downloaded'])
         runs_errors = len([r for r in run_records if r.get('status') == 'error'])
-        processed_files = len(glob.glob(os.path.join(self.processed_path, '*.mat')))
+        spectrogram_files = len(glob.glob(os.path.join(self.spectrogram_path, '*.mat')))
 
         return {
             'device': device_code,
             'runs_total': len(run_records),
             'runs_downloaded': runs_downloaded,
             'runs_errors': runs_errors,
-            'processed_mat': processed_files,
+            'spectrogram_files': spectrogram_files,
             'input_path': self.input_path,
             'flac_path': self.flac_path,
             'wall_seconds': time.time() - wall_start,
@@ -1061,9 +1082,9 @@ class HydrophoneDownloader:
         Skip requests that already have a matching file downloaded.
         Matching is done on the exact request start timestamp prefix, not just the day.
         """
+        # Use flat spectrogram_path (no subdirectories)
         search_paths = [
-            os.path.join(self.processed_path, f"{device_code}_*.{extension}"),
-            os.path.join(self.input_path, f"{device_code}_*.{extension}"),
+            os.path.join(self.spectrogram_path, f"{device_code}_*.{extension}"),
         ]
         existing_prefixes = set()
         for pattern in search_paths:
@@ -1385,7 +1406,21 @@ class HydrophoneDownloader:
             # Always restore original output path
             client.outPath = original_output_path
 
-    def check_for_anomalies(self, file_path, file1, file2):
+    def check_for_anomalies(self, file_path, anomaly_log=None):
+        """Check a spectrogram file for anomalies (black/white bands).
+        
+        In the flat directory structure, anomalous files are NOT moved - they are just
+        logged for reference. This allows users to review and decide what to do.
+        
+        Args:
+            file_path: Path to the spectrogram file
+            anomaly_log: Optional list to append anomaly info to
+            
+        Returns:
+            dict with 'has_anomaly', 'file', and 'issues' keys
+        """
+        result = {'has_anomaly': False, 'file': file_path, 'issues': []}
+        
         try:
             image_obj = None
             if file_path.lower().endswith('.png'):
@@ -1396,105 +1431,115 @@ class HydrophoneDownloader:
                 if 'SpectData' in mat_data:
                     image_obj = mat_data['SpectData']['PSD'][0,0]
                 else:
-                    raise ValueError('No "SpectData" key found in .mat file')
+                    result['has_anomaly'] = True
+                    result['issues'].append('No "SpectData" key found in .mat file')
+                    self.logger.warning(f'No SpectData in {os.path.basename(file_path)}')
+                    if anomaly_log is not None:
+                        anomaly_log.append(result)
+                    return result
 
             if image_obj is not None:
                 s = np.zeros([np.shape(image_obj)[0], 1])
-
-                anomaly_found = 0
                 anom_indices_black = []
                 anom_indices_white = []
+                
                 for ii in np.arange(0, np.shape(image_obj)[0]):
                     s[ii] = np.sum(image_obj[ii])
                     if s[ii] < 500:
-                        anomaly_found = 1
                         anom_indices_black.append(ii)
                     elif s[ii] > 568000:
-                        anomaly_found = 2
                         anom_indices_white.append(ii)
 
-                if anomaly_found > 0:
-                    file1.write(file_path + "\n")
+                if anom_indices_black:
+                    seg = segment2(anom_indices_black)
+                    issue = f"{seg.shape[0]} black segment(s) at [{', '.join(' to '.join(map(str, row)) for row in seg)}]"
+                    result['issues'].append(issue)
+                    result['has_anomaly'] = True
+                    self.logger.info(f'Anomaly in {os.path.basename(file_path)}: {issue}')
 
-                    if len(anom_indices_black) > 0:
-                        seg = segment2(anom_indices_black)
-                        num_segments = seg.shape[0]
-                        summary_string = f"{num_segments} black segment(s) found, with entries [{', '.join(' to '.join(map(str, row)) for row in seg)}]"
-                        print(f'{summary_string}: {os.path.basename(file_path)}')
-                        file2.write(f'{summary_string}: {os.path.basename(file_path)}\n')
-
-                    if len(anom_indices_white) > 0:
-                        seg = segment2(anom_indices_white)
-                        num_segments = seg.shape[0]
-                        summary_string = f"{num_segments} white segment(s) found, with entries [{', '.join(' to '.join(map(str, row)) for row in seg)}]"
-                        print(f'{summary_string}: {os.path.basename(file_path)}')
-                        file2.write(f'{summary_string}: {os.path.basename(file_path)}\n')
-
-                    # Move file to the rejects folder, check if it's already there
-                    if os.path.exists(os.path.join(self.anom_path, os.path.basename(file_path))):
-                        # Remove the file from the input folder
-                        print(f'File {file_path} already exists in the rejects folder. Removing from the input folder.')
-                        os.remove(file_path)
-                    else:
-                        shutil.move(file_path, self.anom_path)
+                if anom_indices_white:
+                    seg = segment2(anom_indices_white)
+                    issue = f"{seg.shape[0]} white segment(s) at [{', '.join(' to '.join(map(str, row)) for row in seg)}]"
+                    result['issues'].append(issue)
+                    result['has_anomaly'] = True
+                    self.logger.info(f'Anomaly in {os.path.basename(file_path)}: {issue}')
 
         except Exception as e:
             err_msg = str(e)
-            # Allow truncated MAT files to remain for downstream inspection rather than sending to rejects
+            # Truncated files are kept for inspection
             if 'truncated' in err_msg.lower():
-                self.logger.warning(f'Truncated MAT detected; keeping file for inspection: {file_path}')
-                return
-
-            print(f'Error encountered for: {file_path}, {err_msg}')
-            file1.write(file_path + "\n")
-            file2.write(f'Error encountered for: {file_path}\n')
-            # Move file to the rejects folder, check if it's already there
-            if os.path.exists(os.path.join(self.anom_path, os.path.basename(file_path))):
-                # Remove the file from the input folder
-                print(f'File {file_path} already exists in the rejects folder. Removing from the input folder.')
-                os.remove(file_path)
+                self.logger.warning(f'Truncated file detected: {os.path.basename(file_path)}')
+                result['issues'].append(f'Truncated file: {err_msg}')
             else:
-                shutil.move(file_path, self.anom_path)
-
-    def process_spectrograms(self, filetype='png'):
-        process_start = time.time()
-        self.logger.info("Starting spectrogram processing")
+                self.logger.warning(f'Error checking {os.path.basename(file_path)}: {err_msg}')
+                result['issues'].append(f'Error: {err_msg}')
+            result['has_anomaly'] = True
         
-        with open(os.path.join(self.processed_path, 'anomalous_files.txt'), 'w') as file1, \
-            open(os.path.join(self.processed_path, 'anomalous_file_summary.txt'), 'w') as file2:
+        if anomaly_log is not None and result['has_anomaly']:
+            anomaly_log.append(result)
+        
+        return result
 
-            if filetype == 'png':
-                input_image_paths = glob.glob(os.path.join(self.input_path, '*.png'))
-                self.logger.info(f"Found {len(input_image_paths)} PNG files to process")
-
-                for input_image in input_image_paths:
-                    image_area = (107, 67, 1042, 810)
-                    crop_image(input_image, self.processed_path, image_area)
-
-                    image_name = os.path.basename(input_image)
-                    trimmed_path = os.path.join(self.processed_path, image_name)
-
-                    self.check_for_anomalies(trimmed_path, file1, file2)
-
-                [os.remove(os.path.join(self.input_path, file_name)) for file_name in os.listdir(self.input_path) if file_name.lower().endswith('.png')]
-            elif filetype == 'mat':
-                mat_paths = glob.glob(os.path.join(self.input_path, '*.mat'))
-                self.logger.info(f"Found {len(mat_paths)} MAT files to process")
-                
-                for mat_path in mat_paths:
-                    self.check_for_anomalies(mat_path, file1, file2)
-                
-                # Move files to the processed folder, check if they're already there
-                for file_name in os.listdir(self.input_path):
-                    if file_name.lower().endswith('.mat'):
-                        if os.path.exists(os.path.join(self.processed_path, file_name)):
-                            # Remove the file from the input folder
-                            self.logger.info(f'File {file_name} already exists in the processed folder. Removing from the input folder.')
-                            os.remove(os.path.join(self.input_path, file_name))
-                        else:
-                            shutil.move(os.path.join(self.input_path, file_name), os.path.join(self.processed_path, file_name))
-
-        self.logger.info(f"Spectrogram processing completed in {time.time() - process_start:.2f}s")
+    def validate_spectrograms(self, filetype='mat'):
+        """Validate downloaded spectrograms and generate an anomaly report.
+        
+        This method scans spectrogram files for anomalies (black/white bands, 
+        missing data) and writes a report file. Files are NOT moved - they stay
+        in the flat onc_spectrograms/ directory.
+        
+        Args:
+            filetype: File extension to process ('mat' or 'png')
+            
+        Returns:
+            dict with validation summary
+        """
+        process_start = time.time()
+        self.logger.info(f"Validating {filetype} spectrograms in {self.spectrogram_path}")
+        
+        anomaly_log = []
+        
+        if filetype == 'mat':
+            file_paths = glob.glob(os.path.join(self.spectrogram_path, '*.mat'))
+        elif filetype == 'png':
+            file_paths = glob.glob(os.path.join(self.spectrogram_path, '*.png'))
+        else:
+            file_paths = []
+        
+        self.logger.info(f"Found {len(file_paths)} {filetype.upper()} files to validate")
+        
+        for file_path in file_paths:
+            self.check_for_anomalies(file_path, anomaly_log)
+        
+        # Write anomaly report if any issues found
+        if anomaly_log:
+            report_path = os.path.join(self.spectrogram_path, 'anomaly_report.txt')
+            with open(report_path, 'w') as f:
+                f.write(f"Anomaly Report - {len(anomaly_log)} files with issues\n")
+                f.write("=" * 60 + "\n\n")
+                for entry in anomaly_log:
+                    f.write(f"File: {os.path.basename(entry['file'])}\n")
+                    for issue in entry['issues']:
+                        f.write(f"  - {issue}\n")
+                    f.write("\n")
+            self.logger.info(f"Anomaly report written to {report_path}")
+        
+        elapsed = time.time() - process_start
+        self.logger.info(f"Validation completed in {elapsed:.2f}s ({len(anomaly_log)} anomalies found)")
+        
+        return {
+            'total_files': len(file_paths),
+            'anomalies': len(anomaly_log),
+            'anomaly_details': anomaly_log,
+            'elapsed_seconds': elapsed,
+        }
+    
+    def process_spectrograms(self, filetype='png'):
+        """Legacy method - now just calls validate_spectrograms.
+        
+        Note: This method previously moved files between subdirectories.
+        The new flat structure no longer moves files.
+        """
+        return self.validate_spectrograms(filetype)
 
     def download_spectrograms_with_sampling_schedule(self, deviceCode, start_date, threshold_num, num_days=None, filetype='png', spectrograms_per_batch=6, download_flac=False):
         """
@@ -1564,10 +1609,11 @@ class HydrophoneDownloader:
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                 futures = [
                     executor.submit(
-                        self.submit_mat_run_no_wait,
+                        self.request_manager.submit_mat_run_no_wait,
                         deviceCode,
                         ts,
                         ts + timedelta(seconds=data_length_seconds),
+                        self.spectrogram_path,  # out_path
                         spectrograms_per_batch,
                     )
                     for ts in date_object_list

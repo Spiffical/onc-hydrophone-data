@@ -84,13 +84,23 @@ python scripts/generate_spectrograms.py --input-dir data/DEVICE/flac/ --win-dur 
 
 ## 📁 Output Structure
 
+Downloads are organized in a clean, flat structure:
+
 ```
 data/
 └── ICLISTENHF6020/
     └── sampling_2021-01-01_to_2021-01-31/
-        ├── mat/processed/     # Spectrograms
-        └── flac/              # Audio files (optional)
+        ├── onc_spectrograms/     # ONC-downloaded spectrograms (MAT/PNG)
+        │   ├── *.mat             # Spectrogram data files
+        │   └── anomaly_report.txt # Any validation issues (if found)
+        ├── audio/                # Downloaded audio files
+        │   └── *.flac
+        └── custom_spectrograms/  # Locally-generated spectrograms
+            ├── mat/              # Custom MAT files
+            └── png/              # Custom PNG plots
 ```
+
+**Note:** Unlike previous versions, there are no `processed/` or `rejects/` subdirectories. All files stay in flat directories for simplicity.
 
 ## 🛠️ Troubleshooting
 

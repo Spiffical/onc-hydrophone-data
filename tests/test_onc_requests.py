@@ -2,10 +2,14 @@
 import unittest
 from unittest.mock import MagicMock, patch
 import os
+import sys
 import json
 from datetime import datetime, timezone, timedelta
 import tempfile
 import shutil
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 # Mock the entire onc package before importing ours to avoid real API calls or import errors
 sys_modules_patch = patch.dict('sys.modules', {'onc': MagicMock(), 'onc.onc': MagicMock()})
@@ -42,9 +46,11 @@ class TestONCRequestManager(unittest.TestCase):
         self.assertEqual(loaded_runs[0]['dpRequestId'], 12345)
 
     def test_submit_mat_run_no_wait(self):
-        # Mock the ONC client inside the manager
-        self.manager.onc.requestDataProduct.return_value = {'dpRequestId': 999}
-        self.manager.onc.runDataProduct.return_value = {'runIds': [1001]}
+        # Replace the ONC client with a properly configured mock
+        mock_onc = MagicMock()
+        mock_onc.requestDataProduct.return_value = {'dpRequestId': 999}
+        mock_onc.runDataProduct.return_value = {'runIds': [1001]}
+        self.manager.onc = mock_onc
 
         start_dt = datetime(2021, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         end_dt = start_dt + timedelta(minutes=5)
@@ -77,7 +83,7 @@ class TestONCRequestManager(unittest.TestCase):
         self.assertEqual(rec['status'], 'submitted')
 
 
-    @patch('src.data.onc_requests.ONC')
+    @patch('onc_hydrophone_data.data.onc_requests.ONC')
     def test_wait_for_data_product_ready_complete(self, mock_onc_cls):
         # Mock status client
         mock_client = MagicMock()
@@ -94,7 +100,7 @@ class TestONCRequestManager(unittest.TestCase):
         self.assertTrue(ready)
         self.assertEqual(status, 'complete')
 
-    @patch('src.data.onc_requests.ONC')
+    @patch('onc_hydrophone_data.data.onc_requests.ONC')
     def test_wait_for_data_product_ready_timeout(self, mock_onc_cls):
         # Mock status client
         mock_client = MagicMock()

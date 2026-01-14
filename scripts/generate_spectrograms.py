@@ -134,12 +134,12 @@ def prompt_for_input_source() -> tuple:
             if data_dir.exists():
                 for device_dir in data_dir.iterdir():
                     if device_dir.is_dir():
-                        # Look for flac directories
-                        flac_dirs = list(device_dir.rglob("flac"))
-                        for flac_dir in flac_dirs:
-                            audio_files = find_audio_files(flac_dir)
+                        # Look for audio directories (new structure) and flac (legacy)
+                        audio_dirs = list(device_dir.rglob("audio")) + list(device_dir.rglob("flac"))
+                        for audio_dir in audio_dirs:
+                            audio_files = find_audio_files(audio_dir)
                             if audio_files:
-                                project_dirs.append((flac_dir, len(audio_files)))
+                                project_dirs.append((audio_dir, len(audio_files)))
             
             if not project_dirs:
                 print_status("No audio directories found in project structure", "WARNING")

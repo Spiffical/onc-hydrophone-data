@@ -22,6 +22,16 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import sys
 from functools import lru_cache
 
+# Optional imports for acceleration
+try:
+    import torch
+    import torchaudio
+    HAS_TORCH = True
+except ImportError:
+    HAS_TORCH = False
+    torch = None
+    torchaudio = None
+
 # Thread lock for matplotlib operations (shared across instances)
 _plot_lock = threading.Lock()
 
@@ -160,41 +170,67 @@ class SpectrogramGenerator:
         
         # Calculate overlap in samples
         noverlap = int(self.overlap * nfft)
-        
-        # Create Hann window
-        window = scipy.signal.windows.hann(nfft)
+        hop_length = nfft - noverlap
 
-        use_torch = False
-        torch = None
-        if self.use_gpu:
-            try:
-                import torch  # type: ignore
-                use_torch = torch.cuda.is_available()
-            except Exception:
-                use_torch = False
+        # Determine backend
+        use_torch_backend = False
+        device = 'cpu'
         
-        if use_torch:
-            # GPU path using torch.stft
-            device = torch.device('cuda')
-            audio_t = torch.from_numpy(audio_data.astype(np.float32, copy=False)).to(device)
-            win_t = torch.from_numpy(window.astype(np.float32, copy=False)).to(device)
-            hop_length = nfft - noverlap
-            spec = torch.stft(
-                audio_t,
-                n_fft=nfft,
-                hop_length=hop_length,
-                window=win_t,
-                center=False,
-                return_complex=True,
-                onesided=True,
-            )
-            power = (spec.real**2 + spec.imag**2).cpu().numpy()
-            # Torch stft returns shape [freq, time]; build freq/time axes to match scipy
-            frequencies = np.linspace(0, sample_rate/2, power.shape[0])
-            times = np.arange(power.shape[1]) * (hop_length / sample_rate)
-            Sxx = power
-        else:
+        if HAS_TORCH:
+            if self.use_gpu and torch.cuda.is_available():
+                device = 'cuda'
+                use_torch_backend = True
+            elif not self.use_gpu:
+                # Torchaudio CPU is usually faster than scipy
+                device = 'cpu'
+                use_torch_backend = True
+        
+        if use_torch_backend:
+            try:
+                # Create transform
+                # Note: window_fn defaults to hann_window in torchaudio, matching scipy default
+                spec_transform = torchaudio.transforms.Spectrogram(
+                    n_fft=nfft,
+                    win_length=nfft,
+                    hop_length=hop_length,
+                    power=2.0, # Power spectrogram (|STFT|^2)
+                    center=False,
+                    pad=0,
+                    normalized=False
+                ).to(device)
+                
+                # Prepare data
+                audio_t = torch.from_numpy(audio_data.astype(np.float32, copy=False)).to(device)
+                
+                # Compute
+                spec = spec_transform(audio_t)
+                
+                # Adjust to match Scipy's 'psd' scaling:
+                # Scipy PSD: |STFT|^2 / (fs * sum(window^2))
+                # Torchaudio gives |STFT|^2
+                # We need to construct the window to calculate its energy
+                window = torch.hann_window(nfft, device=device)
+                scale = 1.0 / (sample_rate * (window ** 2).sum())
+                spec *= scale
+                
+                if device == 'cuda':
+                    spec = spec.cpu()
+                
+                Sxx = spec.numpy()
+                
+                # Construct axes
+                frequencies = np.linspace(0, sample_rate/2, Sxx.shape[0])
+                times = np.arange(Sxx.shape[1]) * (hop_length / sample_rate)
+                
+            except Exception as e:
+                self.log.warning(f"Torchaudio computation failed, falling back to Scipy: {e}")
+                use_torch_backend = False
+
+        if not use_torch_backend:
             # CPU path using scipy (equivalent to MATLAB spectrogram with 'psd')
+            # Create Hann window
+            window = scipy.signal.windows.hann(nfft)
+            
             frequencies, times, Sxx = scipy.signal.spectrogram(
                 audio_data,
                 fs=sample_rate,
@@ -242,8 +278,8 @@ class SpectrogramGenerator:
             # Create meshgrid for pcolor
             T, F = np.meshgrid(times, frequencies)
             
-            # Plot spectrogram
-            pcm = ax.pcolor(T, F, power_db_norm, 
+            # Plot spectrogram using pcolormesh (much faster than pcolor)
+            pcm = ax.pcolormesh(T, F, power_db_norm, 
                            cmap=self.colormap, 
                            shading='auto',
                            vmin=self.clim[0], 

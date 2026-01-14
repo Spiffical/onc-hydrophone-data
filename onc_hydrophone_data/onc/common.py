@@ -48,7 +48,15 @@ def print_status(message, level="INFO"):
 
 
 def ensure_timezone_aware(dt_obj, tz=timezone.utc):
-    """Convert timezone-naive datetime to timezone-aware datetime."""
+    """Convert timezone-naive datetime to timezone-aware datetime.
+    
+    Also handles date objects by converting them to datetime at midnight.
+    """
+    from datetime import date
+    # Handle date objects (no time component)
+    if isinstance(dt_obj, date) and not isinstance(dt_obj, datetime):
+        dt_obj = datetime(dt_obj.year, dt_obj.month, dt_obj.day)
+    
     if dt_obj.tzinfo is None:
         return dt_obj.replace(tzinfo=tz)
     return dt_obj
