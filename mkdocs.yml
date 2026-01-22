@@ -1,6 +1,7 @@
 site_name: ONC Hydrophone Data
 site_description: User guide and API reference for downloading ONC hydrophone data.
 site_author: ONC Hydrophone Data Contributors
+site_url: https://spiffical.github.io/onc-hydrophone-data/
 
 repo_name: Spiffical/onc-hydrophone-data
 repo_url: https://github.com/Spiffical/onc-hydrophone-data
