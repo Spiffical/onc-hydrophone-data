@@ -165,6 +165,58 @@ def prompt_for_input_source() -> tuple:
             print_status("Please enter a number between 1 and 4", "WARNING")
             continue
 
+def parse_window_type(value: Optional[str]):
+    if value is None:
+        return None
+    cleaned = str(value).strip()
+    if not cleaned or cleaned.lower() in {'none', 'null'}:
+        return None
+    for sep in (',', ':'):
+        if sep in cleaned:
+            name, param = cleaned.split(sep, 1)
+            name = name.strip()
+            param = param.strip()
+            if not name:
+                return None
+            if param:
+                try:
+                    return (name, float(param))
+                except ValueError:
+                    return cleaned
+    return cleaned
+
+def _prompt_optional_float(prompt: str) -> Optional[float]:
+    while True:
+        value = input(prompt).strip()
+        if not value:
+            return None
+        try:
+            return float(value)
+        except ValueError:
+            print_status("Please enter a valid number", "ERROR")
+
+def _prompt_optional_int(prompt: str) -> Optional[int]:
+    while True:
+        value = input(prompt).strip()
+        if not value:
+            return None
+        try:
+            return int(value)
+        except ValueError:
+            print_status("Please enter a valid integer", "ERROR")
+
+def _prompt_yes_no(prompt: str, default: bool) -> bool:
+    suffix = " [Y/n]" if default else " [y/N]"
+    while True:
+        value = input(f\"{prompt}{suffix}: \").strip().lower()
+        if not value:
+            return default
+        if value in {'y', 'yes'}:
+            return True
+        if value in {'n', 'no'}:
+            return False
+        print_status("Please enter y or n", "ERROR")
+
 def prompt_for_parameters() -> dict:
     """
     Prompt user for spectrogram parameters.
@@ -205,6 +257,17 @@ def prompt_for_parameters() -> dict:
                 print_status("Overlap must be between 0 and 1", "ERROR")
         except ValueError:
             print_status("Please enter a valid number", "ERROR")
+
+    window_input = input(
+        "Window type [default: hann] (e.g., hann, hamming, kaiser,14): "
+    ).strip()
+    params['window_type'] = parse_window_type(window_input) or 'hann'
+
+    params['nfft'] = _prompt_optional_int("FFT size nfft in samples [default: auto]: ")
+    params['win_length'] = _prompt_optional_int("Window length in samples [default: auto]: ")
+    params['hop_length'] = _prompt_optional_int(
+        "Hop length in samples [default: auto] (overrides overlap): "
+    )
     
     # Frequency limits
     while True:
@@ -234,6 +297,66 @@ def prompt_for_parameters() -> dict:
                 print_status(f"Maximum frequency must be greater than {params['freq_min']}", "ERROR")
         except ValueError:
             print_status("Please enter a valid number", "ERROR")
+
+    colormap_input = input("Colormap [default: turbo]: ").strip()
+    params['colormap'] = colormap_input or 'turbo'
+
+    while True:
+        clim_min_input = input("Color scale minimum dB [default: -60]: ").strip()
+        if not clim_min_input:
+            params['clim_min'] = -60
+            break
+        try:
+            params['clim_min'] = float(clim_min_input)
+            break
+        except ValueError:
+            print_status("Please enter a valid number", "ERROR")
+
+    while True:
+        clim_max_input = input("Color scale maximum dB [default: 0]: ").strip()
+        if not clim_max_input:
+            params['clim_max'] = 0
+            break
+        try:
+            params['clim_max'] = float(clim_max_input)
+            if params['clim_max'] > params['clim_min']:
+                break
+            print_status("Maximum dB must be greater than minimum dB", "ERROR")
+        except ValueError:
+            print_status("Please enter a valid number", "ERROR")
+
+    params['log_freq'] = _prompt_yes_no("Log frequency axis?", default=True)
+    params['max_duration'] = _prompt_optional_float(
+        "Maximum duration per file in seconds [default: full file]: "
+    )
+    params['clip_start'] = _prompt_optional_float("Clip start time in seconds [default: none]: ")
+    params['clip_end'] = _prompt_optional_float("Clip end time in seconds [default: none]: ")
+    params['clip_pad_seconds'] = _prompt_optional_float(
+        "Clip context padding in seconds on each side [default: auto]: "
+    )
+
+    while True:
+        backend_input = input("Backend [default: auto] (auto/torch/scipy): ").strip().lower()
+        if not backend_input:
+            params['backend'] = 'auto'
+            break
+        if backend_input in {'auto', 'torch', 'scipy'}:
+            params['backend'] = backend_input
+            break
+        print_status("Please enter auto, torch, or scipy", "ERROR")
+
+    while True:
+        scaling_input = input("Scaling [default: density] (density/spectrum): ").strip().lower()
+        if not scaling_input:
+            params['scaling'] = 'density'
+            break
+        if scaling_input in {'density', 'spectrum'}:
+            params['scaling'] = scaling_input
+            break
+        print_status("Please enter density or spectrum", "ERROR")
+
+    params['quiet'] = _prompt_yes_no("Quiet mode (reduced logging)?", default=False)
+    params['use_logging'] = _prompt_yes_no("Use logging module?", default=True)
     
     # Output format
     print("\nOutput format options:")
@@ -380,11 +503,45 @@ Examples:
                        type=float, 
                        default=0.5,
                        help='Overlap ratio between windows 0-1 (default: 0.5)')
+
+    parser.add_argument('--window-type',
+                       default='hann',
+                       help='Window type (e.g., hann, hamming, kaiser,14) (default: hann)')
+
+    parser.add_argument('--nfft',
+                       type=int,
+                       default=None,
+                       help='FFT size in samples (default: derived from win_dur)')
+
+    parser.add_argument('--win-length',
+                       type=int,
+                       default=None,
+                       help='Window length in samples (default: nfft)')
+
+    parser.add_argument('--hop-length',
+                       type=int,
+                       default=None,
+                       help='Hop length in samples (overrides overlap)')
     
     parser.add_argument('--max-duration', 
                        type=float, 
                        default=None,
                        help='Maximum duration to process in seconds (default: process full file)')
+
+    parser.add_argument('--clip-start',
+                       type=float,
+                       default=None,
+                       help='Clip start time in seconds (default: none)')
+
+    parser.add_argument('--clip-end',
+                       type=float,
+                       default=None,
+                       help='Clip end time in seconds (default: none)')
+
+    parser.add_argument('--clip-pad-seconds',
+                       type=float,
+                       default=None,
+                       help='Extra context (seconds) on each side before STFT (default: auto)')
     
     parser.add_argument('--freq-min', 
                        type=float, 
@@ -413,6 +570,11 @@ Examples:
                        action='store_true',
                        default=True,
                        help='Use logarithmic frequency scale (default: True)')
+
+    parser.add_argument('--linear-freq',
+                       dest='log_freq',
+                       action='store_false',
+                       help='Use linear frequency scale')
     
     parser.add_argument('--clim-min', 
                        type=float, 
@@ -423,6 +585,27 @@ Examples:
                        type=float, 
                        default=0,
                        help='Maximum color scale value in dB (default: 0)')
+
+    parser.add_argument('--backend',
+                       choices=['auto', 'torch', 'scipy'],
+                       default='auto',
+                       help='Spectrogram backend: auto, torch, or scipy (default: auto)')
+
+    parser.add_argument('--scaling',
+                       choices=['density', 'spectrum'],
+                       default='density',
+                       help='PSD scaling: density or spectrum (default: density)')
+
+    parser.add_argument('--quiet',
+                       action='store_true',
+                       default=False,
+                       help='Reduce logging output')
+
+    parser.add_argument('--no-logging',
+                       dest='use_logging',
+                       action='store_false',
+                       default=True,
+                       help='Disable logging module output')
     
     args = parser.parse_args()
     
@@ -464,11 +647,22 @@ Examples:
             generator_params = {
                 'win_dur': args.win_dur,
                 'overlap': args.overlap,
+                'window_type': parse_window_type(args.window_type),
+                'nfft': args.nfft,
+                'win_length': args.win_length,
+                'hop_length': args.hop_length,
                 'freq_lims': (args.freq_min, args.freq_max),
                 'colormap': args.colormap,
                 'clim': (args.clim_min, args.clim_max),
                 'log_freq': args.log_freq,
-                'max_duration': args.max_duration
+                'max_duration': args.max_duration,
+                'clip_start': args.clip_start,
+                'clip_end': args.clip_end,
+                'clip_pad_seconds': args.clip_pad_seconds,
+                'backend': args.backend,
+                'scaling': args.scaling,
+                'quiet': args.quiet,
+                'use_logging': args.use_logging,
             }
         else:
             # Interactive parameter selection
@@ -478,11 +672,22 @@ Examples:
             generator_params = {
                 'win_dur': params['win_dur'],
                 'overlap': params['overlap'],
+                'window_type': params['window_type'],
+                'nfft': params['nfft'],
+                'win_length': params['win_length'],
+                'hop_length': params['hop_length'],
                 'freq_lims': (params['freq_min'], params['freq_max']),
-                'colormap': args.colormap,
-                'clim': (args.clim_min, args.clim_max),
-                'log_freq': args.log_freq,
-                'max_duration': getattr(args, 'max_duration', None)
+                'colormap': params['colormap'],
+                'clim': (params['clim_min'], params['clim_max']),
+                'log_freq': params['log_freq'],
+                'max_duration': params['max_duration'],
+                'clip_start': params['clip_start'],
+                'clip_end': params['clip_end'],
+                'clip_pad_seconds': params.get('clip_pad_seconds', None),
+                'backend': params['backend'],
+                'scaling': params['scaling'],
+                'quiet': params['quiet'],
+                'use_logging': params['use_logging'],
             }
         
         # Create spectrogram generator

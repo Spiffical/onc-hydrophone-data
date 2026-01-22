@@ -72,7 +72,7 @@ def test_sampling_mode(downloader: HydrophoneDownloader, test_dir: str):
             num_days=1,
             filetype='mat',
             spectrograms_per_batch=1,
-            download_flac=False
+            download_audio=False
         )
         
         # Check folder structure

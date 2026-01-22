@@ -14,6 +14,11 @@ from collections import defaultdict
 from typing import Dict, List, Tuple, Any, Optional, Union
 import concurrent.futures
 from dataclasses import dataclass
+from .location_mappings import (
+    build_friendly_mapping_names,
+    build_reverse_location_mapping,
+    get_system_for_location,
+)
 
 try:
     from dateutil import parser as dtparse
@@ -32,6 +37,7 @@ except ImportError:
 class DeploymentInfo:
     """Information about a hydrophone deployment."""
     device_code: str
+    device_id: Optional[str]
     location_code: str
     location_name: str
     begin_date: datetime
@@ -80,7 +86,8 @@ class HydrophoneDeploymentChecker:
         Get all hydrophone deployments from ONC.
         
         Returns:
-            List of DeploymentInfo objects for all deployments
+            List of ``DeploymentInfo`` objects for all deployments, including
+            location metadata (name/code, lat/lon, depth) and deployment dates.
         """
         logging.info("Fetching hydrophone devices from ONC...")
         
@@ -219,7 +226,7 @@ class HydrophoneDeploymentChecker:
             device_codes: Optional list of device codes to check. If None, checks all.
             
         Returns:
-            Dictionary mapping device codes to list of (start_date, end_date) tuples
+            Dict mapping device codes to lists of ``(start_date, end_date)`` tuples.
         """
         all_deployments = self.get_all_hydrophone_deployments()
         
@@ -276,6 +283,276 @@ class HydrophoneDeploymentChecker:
                 if dep.latitude and dep.longitude:
                     print(f"     Location: {dep.latitude:.4f}°N, {dep.longitude:.4f}°W")
                 print()
+
+    def collect_hydrophone_inventory(
+        self,
+        *,
+        include_inactive: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Collect hydrophone deployment inventory with current and history views.
+
+        Args:
+            include_inactive: If True, include inactive devices in the
+                per‑device summaries when building the inventory.
+
+        Returns:
+            Dict with ``current`` and ``history`` lists of records.
+        """
+        deployments = self.get_all_hydrophone_deployments()
+        code_to_mapping_names = build_reverse_location_mapping()
+        now = datetime.now(timezone.utc)
+
+        def format_dep(dep: DeploymentInfo) -> Dict[str, Any]:
+            raw_names = code_to_mapping_names.get(dep.location_code, [])
+            friendly_names = build_friendly_mapping_names(raw_names)
+            systems = sorted({
+                get_system_for_location(name)
+                for name in raw_names
+                if get_system_for_location(name) != 'Unknown'
+            })
+            location_path = " > ".join(dep.location_path) if dep.location_path else None
+            active = dep.end_date is None or dep.end_date >= now
+            return {
+                'device_code': dep.device_code,
+                'device_id': dep.device_id,
+                'location_code': dep.location_code,
+                'location_name': dep.location_name,
+                'mapped_location_names': ", ".join(friendly_names) if friendly_names else None,
+                'mapped_systems': ", ".join(systems) if systems else None,
+                'begin_date': dep.begin_date,
+                'end_date': dep.end_date,
+                'depth_m': dep.depth,
+                'latitude': dep.latitude,
+                'longitude': dep.longitude,
+                'position_name': dep.position_name,
+                'location_path': location_path,
+                'has_data': dep.has_data,
+                'active': active,
+            }
+
+        history_rows: List[Dict[str, Any]] = []
+        current_rows: List[Dict[str, Any]] = []
+
+        by_device: Dict[str, List[DeploymentInfo]] = defaultdict(list)
+        for dep in deployments:
+            by_device[dep.device_code].append(dep)
+
+        for device_code, deps in by_device.items():
+            deps_sorted = sorted(deps, key=lambda d: d.begin_date)
+            deployment_count = len(deps_sorted)
+            history_start = deps_sorted[0].begin_date if deps_sorted else None
+            history_end: Optional[datetime]
+            if any(dep.end_date is None for dep in deps_sorted):
+                history_end = None
+            else:
+                history_end = max((dep.end_date for dep in deps_sorted if dep.end_date), default=None)
+
+            for dep in deps_sorted:
+                history_rows.append(format_dep(dep))
+
+            for dep in deps_sorted:
+                active = dep.end_date is None or dep.end_date >= now
+                if not active and not include_inactive:
+                    continue
+                if active:
+                    row = format_dep(dep)
+                    row['deployment_count'] = deployment_count
+                    row['history_start'] = history_start
+                    row['history_end'] = history_end
+                    current_rows.append(row)
+
+        return {
+            'generated_at': now,
+            'current': current_rows,
+            'history': history_rows,
+        }
+
+    def render_hydrophone_inventory_table(
+        self,
+        inventory: Dict[str, Any],
+        *,
+        view: str = 'current',
+        max_rows: Optional[int] = 50,
+    ):
+        """
+        Render the inventory into a table (DataFrame if pandas is available).
+
+        Args:
+            inventory: Output of ``collect_hydrophone_inventory``.
+            view: ``current`` or ``history``.
+            max_rows: Maximum number of rows to display (None = no limit).
+
+        Returns:
+            A pandas DataFrame if pandas is installed, otherwise a Markdown string.
+        """
+        rows = list(inventory.get(view, []))
+        if max_rows is not None:
+            rows = rows[:max_rows]
+        if not rows:
+            return "No rows to display."
+
+        def fmt_value(value: Any) -> Any:
+            if isinstance(value, datetime):
+                return value.strftime('%Y-%m-%d %H:%M')
+            if value is None:
+                return ''
+            if isinstance(value, float):
+                return round(value, 4)
+            return value
+
+        columns_current = [
+            'device_code',
+            'device_id',
+            'location_code',
+            'location_name',
+            'mapped_location_names',
+            'mapped_systems',
+            'begin_date',
+            'end_date',
+            'depth_m',
+            'latitude',
+            'longitude',
+            'deployment_count',
+            'history_start',
+            'history_end',
+        ]
+        columns_history = [
+            'device_code',
+            'device_id',
+            'location_code',
+            'location_name',
+            'mapped_location_names',
+            'mapped_systems',
+            'begin_date',
+            'end_date',
+            'depth_m',
+            'latitude',
+            'longitude',
+            'position_name',
+            'location_path',
+        ]
+        columns = columns_current if view == 'current' else columns_history
+
+        table_rows = [
+            {col: fmt_value(row.get(col)) for col in columns}
+            for row in rows
+        ]
+
+        try:
+            import pandas as pd  # type: ignore
+        except Exception:
+            pd = None  # type: ignore
+
+        if pd is not None:
+            return pd.DataFrame(table_rows, columns=columns)
+
+        header = '| ' + ' | '.join(columns) + ' |'
+        separator = '| ' + ' | '.join(['---'] * len(columns)) + ' |'
+        lines = [header, separator]
+        for row in table_rows:
+            line = '| ' + ' | '.join(str(row.get(col, '')) for col in columns) + ' |'
+            lines.append(line)
+        return '\n'.join(lines)
+
+    def show_hydrophone_inventory_table(
+        self,
+        inventory: Dict[str, Any],
+        *,
+        view: str = 'current',
+        max_rows: Optional[int] = 50,
+    ):
+        """
+        Display the inventory table in notebooks or print a Markdown fallback.
+
+        Args:
+            inventory: Output of ``collect_hydrophone_inventory``.
+            view: ``current`` or ``history``.
+            max_rows: Maximum number of rows to display (None = no limit).
+
+        Returns:
+            The rendered table (DataFrame or Markdown string).
+        """
+        table = self.render_hydrophone_inventory_table(
+            inventory,
+            view=view,
+            max_rows=max_rows,
+        )
+        try:
+            from IPython.display import Markdown, display  # type: ignore
+        except Exception:
+            display = None  # type: ignore
+            Markdown = None  # type: ignore
+
+        if hasattr(table, 'to_string'):
+            if display is not None:
+                display(table)
+            else:
+                print(table.to_string(index=False))
+        else:
+            if display is not None and Markdown is not None and isinstance(table, str):
+                display(Markdown(table))
+            else:
+                print(table)
+        return table
+
+    def _filter_inventory_by_devices(
+        self,
+        inventory: Dict[str, Any],
+        *,
+        device_codes: Optional[List[str]] = None,
+        device_ids: Optional[List[Union[str, int]]] = None,
+    ) -> Dict[str, Any]:
+        rows = list(inventory.get('history', []))
+        if not rows:
+            return {'history': []}
+        codes_set = {code for code in (device_codes or []) if code}
+        ids_set = {str(device_id) for device_id in (device_ids or []) if device_id is not None}
+
+        if not codes_set and not ids_set:
+            return {'history': rows}
+
+        filtered = []
+        for row in rows:
+            if codes_set and row.get('device_code') in codes_set:
+                filtered.append(row)
+                continue
+            if ids_set and row.get('device_id') in ids_set:
+                filtered.append(row)
+                continue
+        return {'history': filtered}
+
+    def show_device_deployments(
+        self,
+        *,
+        device_codes: Optional[List[str]] = None,
+        device_ids: Optional[List[Union[str, int]]] = None,
+        max_rows: Optional[int] = 50,
+        inventory: Optional[Dict[str, Any]] = None,
+    ):
+        """
+        Show deployment history for specific device codes or device IDs.
+
+        Args:
+            device_codes: List of ONC device codes to filter by.
+            device_ids: List of numeric device IDs to filter by.
+            max_rows: Maximum number of rows to display (None = no limit).
+            inventory: Optional inventory output to reuse (avoids re-fetch).
+
+        Returns:
+            The rendered table (DataFrame or Markdown string).
+        """
+        inventory = inventory or self.collect_hydrophone_inventory()
+        filtered = self._filter_inventory_by_devices(
+            inventory,
+            device_codes=device_codes,
+            device_ids=device_ids,
+        )
+        return self.show_hydrophone_inventory_table(
+            filtered,
+            view='history',
+            max_rows=max_rows,
+        )
     
     def find_best_deployments_for_date_range(self, 
                                            start_date: Union[str, datetime], 
@@ -436,6 +713,9 @@ class HydrophoneDeploymentChecker:
             device_code = deployment_dict.get('deviceCode')
             if not device_code:
                 return None
+            device_id = deployment_dict.get('deviceId') or deployment_dict.get('deviceID') or deployment_dict.get('device_id')
+            if device_id is not None:
+                device_id = str(device_id)
             
             # Parse dates
             begin_str = deployment_dict.get('begin')
@@ -462,6 +742,7 @@ class HydrophoneDeploymentChecker:
             
             return DeploymentInfo(
                 device_code=device_code,
+                device_id=device_id,
                 location_code=location_code,
                 location_name=location_name,
                 begin_date=begin_date,

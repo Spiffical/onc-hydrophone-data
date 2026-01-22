@@ -48,7 +48,7 @@ def print_status(message, level="INFO"):
 
 
 def ensure_timezone_aware(dt_obj, tz=timezone.utc):
-    """Convert timezone-naive datetime to timezone-aware datetime.
+    """Convert timezone-naive datetime to timezone-aware datetime (and normalize to tz).
     
     Also handles date objects by converting them to datetime at midnight.
     """
@@ -59,12 +59,12 @@ def ensure_timezone_aware(dt_obj, tz=timezone.utc):
     
     if dt_obj.tzinfo is None:
         return dt_obj.replace(tzinfo=tz)
-    return dt_obj
+    return dt_obj.astimezone(tz)
 
 
 def format_iso_utc(dt_obj: datetime) -> str:
     """Format datetime as ONC-compatible ISO UTC string."""
-    dt_obj = ensure_timezone_aware(dt_obj)
+    dt_obj = ensure_timezone_aware(dt_obj, tz=timezone.utc)
     return dt_obj.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
 
 

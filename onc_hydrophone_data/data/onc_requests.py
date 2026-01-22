@@ -23,7 +23,15 @@ class ONCRequestManager:
     abstracting these details away from the file downloading logic.
     """
     
-    def __init__(self, onc_token: str, parent_dir: str, logger: logging.Logger):
+    def __init__(
+        self,
+        onc_token: str,
+        parent_dir: str,
+        logger: logging.Logger,
+        *,
+        spectral_downsample: Optional[int] = None,
+        spectrogram_concatenation: Optional[str] = "None",
+    ):
         """
         Initialize the Request Manager.
 
@@ -31,12 +39,16 @@ class ONCRequestManager:
             onc_token: The API token for authenticating with Ocean Networks Canada.
             parent_dir: Root directory for the project. Used to store the run queue in .onc_runs/.
             logger: Logger instance for status updates.
+            spectral_downsample: Default dpo_spectralDataDownsample value to apply when missing.
+            spectrogram_concatenation: Default dpo_spectrogramConcatenation value to apply when missing.
         """
         self._onc_token = onc_token
         # Initialize ONC client with showInfo=False to rely on our own progress logging
         self.onc = ONC(onc_token, showInfo=False)
         self.parent_dir = parent_dir
         self.logger = logger
+        self.default_spectral_downsample = spectral_downsample
+        self.default_spectrogram_concatenation = spectrogram_concatenation
         
         # Directory to store persistent state of ongoing downloads
         self.queue_dir = os.path.join(self.parent_dir, '.onc_runs')
@@ -102,7 +114,7 @@ class ONCRequestManager:
         end_dt: datetime,
         out_path: str,
         spectrograms_per_batch: int = 6,
-        spectral_downsample: Optional[int] = None,
+        data_product_options: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Submit a request for Hydrophone Spectrogram Data (MAT files) to the ONC API asynchronously.
@@ -116,8 +128,7 @@ class ONCRequestManager:
             end_dt: End datetime for the data range.
             out_path: Local directory where files should eventually be downloaded.
             spectrograms_per_batch: (Unused parameter retained for interface compatibility).
-            spectral_downsample: Quality/Resolution setting. 
-                                 None/2 = Plot Resolution (standard), 0 = Full Resolution.
+            data_product_options: Optional ONC data product options (dpo_*). When empty, ONC defaults apply.
 
         Returns:
             A dictionary record describing the submitted run, including:
@@ -136,9 +147,21 @@ class ONCRequestManager:
             'dateFrom': start_time,
             'dateTo': end_time,
             'extension': 'mat',
-            'dpo_hydrophoneDataDiversionMode': 'OD',  # 'OD' = On Demand
-            'dpo_spectralDataDownsample': spectral_downsample if spectral_downsample is not None else 0,
+            'dpo_hydrophoneDataDiversionMode': 'OD',  # OD = Original Data
         }
+        data_product_options = dict(data_product_options or {})
+        if (
+            'dpo_spectralDataDownsample' not in data_product_options
+            and self.default_spectral_downsample is not None
+        ):
+            data_product_options['dpo_spectralDataDownsample'] = self.default_spectral_downsample
+        if (
+            'dpo_spectrogramConcatenation' not in data_product_options
+            and self.default_spectrogram_concatenation is not None
+        ):
+            data_product_options['dpo_spectrogramConcatenation'] = self.default_spectrogram_concatenation
+        if data_product_options:
+            filters.update(data_product_options)
 
         # Step 1: Request the data product
         # This registers the request with ONC

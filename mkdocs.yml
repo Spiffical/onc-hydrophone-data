@@ -1,0 +1,50 @@
+site_name: ONC Hydrophone Data
+site_description: User guide and API reference for downloading ONC hydrophone data.
+site_author: ONC Hydrophone Data Contributors
+
+repo_name: Spiffical/onc-hydrophone-data
+repo_url: https://github.com/Spiffical/onc-hydrophone-data
+edit_uri: ""
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Workflows:
+      - Deployments & Inventory: inventory.md
+      - Downloads: downloads.md
+      - Custom Spectrograms: custom_spectrograms.md
+  - API Reference:
+      - Overview: reference/index.md
+      - HydrophoneDownloader: reference/downloader.md
+      - Deployment Checker: reference/deployment_checker.md
+      - Spectrogram Generator: reference/spectrogram_generator.md
+      - ONC Common Helpers: reference/onc_common.md
+
+plugins:
+  - search
+  - autorefs
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            merge_init_into_class: true
+            show_source: false
+            heading_level: 2
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true

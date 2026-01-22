@@ -53,7 +53,7 @@ downloader.download_spectrograms_with_sampling_schedule(
 
 # Generate custom spectrograms from audio files
 generator = SpectrogramGenerator(win_dur=2.0, overlap=0.75)
-generator.process_directory("data/DEVICE/flac/", "output/spectrograms/")
+generator.process_directory("data/DEVICE/audio/", "output/spectrograms/")
 ```
 
 ### Command Line
@@ -68,16 +68,17 @@ python scripts/download_hydrophone_data.py --mode sampling \
 
 # Include FLAC audio files
 python scripts/download_hydrophone_data.py --mode sampling \
-    --device ICLISTENHF6020 --start-date 2021 1 1 --threshold 100 --download-flac
+    --device ICLISTENHF6020 --start-date 2021 1 1 --threshold 100 --download-audio
 
 # Generate custom spectrograms
-python scripts/generate_spectrograms.py --input-dir data/DEVICE/flac/ --win-dur 2.0
+python scripts/generate_spectrograms.py --input-dir data/DEVICE/audio/ --win-dur 2.0
 ```
 
 ## ✨ Features
 
 - **Smart Sampling**: Intelligently distributes downloads across date ranges
-- **FLAC Audio**: Download raw audio alongside spectrograms
+- **Parallel ONC Requests**: Submits many requests at once so ONC processes them in parallel, then downloads when ready (faster than sequential requests)
+- **Audio Downloads**: Download raw audio (FLAC/WAV) alongside spectrograms
 - **Custom Spectrograms**: Generate spectrograms with configurable parameters
 - **Deployment Validation**: Ensures data exists for requested time periods
 - **Interactive Mode**: Guided CLI for easy setup
@@ -112,6 +113,7 @@ data/
 
 ## 📚 Documentation
 
+Docs site: **https://spiffical.github.io/onc-hydrophone-data/**  
 See the **[Tutorial Notebook](notebooks/ONC_Data_Download_Tutorial.ipynb)** for comprehensive examples including:
 - Different download modes (sampling, range, specific times)
 - Parallel download optimization

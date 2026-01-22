@@ -6,6 +6,7 @@ pillow>=9.0.0
 requests>=2.28.0
 torch>=2.0.0
 torchaudio>=2.0.0
+torchcodec>=0.2.0
 python-dotenv>=1.0.0
 tqdm>=4.65.0
 soundfile>=0.12.0

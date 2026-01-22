@@ -91,7 +91,6 @@ def test_real_download_and_spectrogram():
             overlap=0.5,
             freq_lims=(10, 10000),
             clim=(-60, 0),
-            use_gpu=False, # Force CPU for compatibility/testing
             use_logging=True
         )
         
