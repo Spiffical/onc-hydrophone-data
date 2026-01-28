@@ -19,6 +19,7 @@ from .location_mappings import (
     build_reverse_location_mapping,
     get_system_for_location,
 )
+from ..onc.common import ensure_timezone_aware, format_iso_utc
 
 try:
     from dateutil import parser as dtparse
@@ -63,9 +64,14 @@ class HydrophoneDeploymentChecker:
             onc_token: ONC API token
             debug: Enable debug logging
         """
-        self.onc = ONC(onc_token, showInfo=debug)
+        self.onc = ONC(onc_token, showInfo=debug, showWarning=debug)
         # Best-effort: quiet the ONC client if it supports these toggles
-        for attr, value in (('showInfo', False), ('showWarnings', False), ('showErrors', False)):
+        for attr, value in (
+            ('showInfo', False),
+            ('showWarning', False),
+            ('showWarnings', False),
+            ('showErrors', False),
+        ):
             try:
                 setattr(self.onc, attr, value)
             except Exception:
@@ -75,6 +81,11 @@ class HydrophoneDeploymentChecker:
         self._location_paths = {}
         self._location_cache_built = False
         self._location_paths_built = False
+        self._deployments_cache = None
+        self._deployments_cache_at = None
+        self._archive_cache = {}
+        self._device_deployments_cache = {}
+        self._device_deployments_cache_at = {}
         
         # Setup logging
         log_level = logging.DEBUG if debug else logging.INFO
@@ -163,7 +174,7 @@ class HydrophoneDeploymentChecker:
         logging.info(f"Searching for deployments overlapping: {start_utc} to {end_utc}")
         
         # Get all deployments
-        all_deployments = self.get_all_hydrophone_deployments()
+        all_deployments = self._get_cached_deployments()
         
         # Filter by time overlap
         overlapping = []
@@ -228,7 +239,7 @@ class HydrophoneDeploymentChecker:
         Returns:
             Dict mapping device codes to lists of ``(start_date, end_date)`` tuples.
         """
-        all_deployments = self.get_all_hydrophone_deployments()
+        all_deployments = self._get_cached_deployments()
         
         # Filter by device codes if specified
         if device_codes:
@@ -553,6 +564,284 @@ class HydrophoneDeploymentChecker:
             view='history',
             max_rows=max_rows,
         )
+
+    def get_device_availability(
+        self,
+        device_code: str,
+        *,
+        start_date: Optional[Union[str, datetime]] = None,
+        end_date: Optional[Union[str, datetime]] = None,
+        timezone_str: str = 'UTC',
+        bin_size: str = 'day',
+        max_days_per_request: int = 60,
+        progress: Optional[Any] = None,
+        quiet: bool = True,
+        max_workers: int = 4,
+        request_delay_seconds: float = 0.0,
+    ) -> Dict[str, Any]:
+        """
+        Build deployment-aware availability bins for a specific device.
+
+        Args:
+            device_code: ONC device code to evaluate.
+            start_date: Optional start date for availability window.
+            end_date: Optional end date for availability window.
+            timezone_str: Timezone for binning and display.
+            bin_size: "day" or "hour" binning for availability.
+            max_days_per_request: Chunk size for archive queries.
+
+        Returns:
+            Dict with device metadata, deployments, bins, and deployment_summary.
+            Bin records include: start, end, coverage (0-1), status, deployment_index.
+            Bins align to day/hour boundaries in the requested timezone.
+        """
+        if not device_code:
+            raise ValueError("device_code is required")
+
+        bin_size = (bin_size or 'day').lower().strip()
+        if bin_size in ('days',):
+            bin_size = 'day'
+        if bin_size in ('hours',):
+            bin_size = 'hour'
+        if bin_size not in ('day', 'hour'):
+            raise ValueError("bin_size must be 'day' or 'hour'")
+
+        tz = gettz(timezone_str) if timezone_str else UTC
+        if tz is None:
+            raise ValueError(f"Unknown timezone: {timezone_str}")
+
+        device_deployments = self._get_device_deployments(device_code)
+        device_deployments.sort(key=lambda d: d.begin_date)
+        deduped: List[DeploymentInfo] = []
+        seen = set()
+        for dep in device_deployments:
+            key = (
+                dep.device_code,
+                dep.location_code,
+                dep.begin_date,
+                dep.end_date,
+                dep.position_name,
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(dep)
+        device_deployments = deduped
+
+        if not device_deployments:
+            return {
+                'device_code': device_code,
+                'timezone': timezone_str,
+                'bin_size': bin_size,
+                'start': None,
+                'end': None,
+                'deployments': [],
+                'bins': [],
+                'deployment_summary': [],
+            }
+
+        now_utc = datetime.now(timezone.utc)
+        dep_starts = [
+            ensure_timezone_aware(dep.begin_date, tz=timezone.utc).astimezone(tz)
+            for dep in device_deployments
+        ]
+        dep_ends = [
+            ensure_timezone_aware(dep.end_date, tz=timezone.utc).astimezone(tz)
+            for dep in device_deployments
+            if dep.end_date is not None
+        ]
+
+        default_start = min(dep_starts)
+        default_end = max(dep_ends) if dep_ends else now_utc.astimezone(tz)
+        if any(dep.end_date is None for dep in device_deployments):
+            default_end = max(default_end, now_utc.astimezone(tz))
+
+        if start_date is None:
+            start_local = default_start
+        else:
+            start_local = self._coerce_datetime(start_date, tz)
+        if end_date is None:
+            end_local = default_end
+        else:
+            end_local = self._coerce_datetime(end_date, tz)
+
+        if end_local <= start_local:
+            raise ValueError("end_date must be after start_date")
+
+        start_local = self._align_to_bin_start(start_local, bin_size)
+
+        bins: List[Dict[str, Any]] = []
+        for bin_start, bin_end in self._iter_bins(start_local, end_local, bin_size):
+            bins.append({
+                'start': bin_start,
+                'end': bin_end,
+                'start_utc': bin_start.astimezone(UTC),
+                'end_utc': bin_end.astimezone(UTC),
+                'coverage': None,
+                'status': 'not_deployed',
+                'deployment_index': None,
+            })
+
+        if not bins:
+            return {
+                'device_code': device_code,
+                'timezone': timezone_str,
+                'bin_size': bin_size,
+                'start': start_local,
+                'end': end_local,
+                'deployments': device_deployments,
+                'bins': [],
+                'deployment_summary': [],
+            }
+
+        range_start_utc = bins[0]['start_utc']
+        range_end_utc = bins[-1]['end_utc']
+
+        deployments_in_range: List[DeploymentInfo] = []
+        dep_ranges: List[Tuple[datetime, datetime]] = []
+        for dep in device_deployments:
+            dep_start = ensure_timezone_aware(dep.begin_date, tz=timezone.utc)
+            dep_end = ensure_timezone_aware(dep.end_date, tz=timezone.utc) if dep.end_date else range_end_utc
+            if dep_end <= range_start_utc or dep_start >= range_end_utc:
+                continue
+            deployments_in_range.append(dep)
+            dep_ranges.append((dep_start, dep_end))
+
+        if not deployments_in_range:
+            return {
+                'device_code': device_code,
+                'timezone': timezone_str,
+                'bin_size': bin_size,
+                'start': start_local,
+                'end': end_local,
+                'deployments': [],
+                'bins': bins,
+                'deployment_summary': [],
+            }
+
+        archive_intervals = self._fetch_archive_intervals(
+            device_code,
+            range_start_utc,
+            range_end_utc,
+            max_days_per_request=max_days_per_request,
+            progress=progress,
+            quiet=quiet,
+            max_workers=max_workers,
+            request_delay_seconds=request_delay_seconds,
+        )
+        merged_intervals = self._merge_intervals(archive_intervals)
+
+        dep_idx = 0
+        interval_idx = 0
+        for b in bins:
+            b_start = b['start_utc']
+            b_end = b['end_utc']
+            while interval_idx < len(merged_intervals) and merged_intervals[interval_idx][1] <= b_start:
+                interval_idx += 1
+
+            while dep_idx < len(dep_ranges) and dep_ranges[dep_idx][1] <= b_start:
+                dep_idx += 1
+
+            active_dep_idx = None
+            if dep_idx < len(dep_ranges):
+                dep_start, dep_end = dep_ranges[dep_idx]
+                if dep_start < b_end and dep_end > b_start:
+                    active_dep_idx = dep_idx
+
+            if active_dep_idx is None:
+                continue
+
+            coverage_seconds = 0.0
+            j = interval_idx
+            while j < len(merged_intervals) and merged_intervals[j][0] < b_end:
+                overlap_start = max(b_start, merged_intervals[j][0])
+                overlap_end = min(b_end, merged_intervals[j][1])
+                if overlap_end > overlap_start:
+                    coverage_seconds += (overlap_end - overlap_start).total_seconds()
+                if merged_intervals[j][1] <= b_end:
+                    j += 1
+                else:
+                    break
+
+            bin_seconds = (b_end - b_start).total_seconds()
+            coverage_ratio = (coverage_seconds / bin_seconds) if bin_seconds > 0 else 0.0
+
+            b['deployment_index'] = active_dep_idx
+            b['coverage'] = max(0.0, min(1.0, coverage_ratio))
+            b['status'] = 'data' if coverage_seconds > 0 else 'no_data'
+
+        deployment_summary: List[Dict[str, Any]] = []
+        for idx, dep in enumerate(deployments_in_range):
+            dep_bins = [b for b in bins if b.get('deployment_index') == idx]
+            total_bins = len(dep_bins)
+            bins_with_data = sum(1 for b in dep_bins if (b.get('coverage') or 0) > 0)
+            coverage_ratio = (bins_with_data / total_bins) if total_bins else 0.0
+            deployment_summary.append({
+                'deployment_index': idx,
+                'device_code': dep.device_code,
+                'location_name': dep.location_name,
+                'location_code': dep.location_code,
+                'begin_date': dep.begin_date,
+                'end_date': dep.end_date,
+                'bins_total': total_bins,
+                'bins_with_data': bins_with_data,
+                'coverage_ratio': coverage_ratio,
+            })
+
+        return {
+            'device_code': device_code,
+            'timezone': timezone_str,
+            'bin_size': bin_size,
+            'start': start_local,
+            'end': end_local,
+            'deployments': deployments_in_range,
+            'bins': bins,
+            'deployment_summary': deployment_summary,
+        }
+
+    def plot_device_availability(
+        self,
+        device_code: str,
+        *,
+        start_date: Optional[Union[str, datetime]] = None,
+        end_date: Optional[Union[str, datetime]] = None,
+        timezone_str: str = 'UTC',
+        bin_size: str = 'day',
+        max_days_per_request: int = 60,
+        style: str = 'timeline',
+        **plot_kwargs: Any,
+    ):
+        """
+        Plot availability for a device using timeline or calendar styles.
+
+        Args:
+            device_code: ONC device code to evaluate.
+            start_date: Optional start date for availability window.
+            end_date: Optional end date for availability window.
+            timezone_str: Timezone for binning and display.
+            bin_size: "day" or "hour" binning for availability.
+            max_days_per_request: Chunk size for archive queries.
+            style: "timeline" or "calendar" (calendar requires bin_size='day').
+            plot_kwargs: Passed to plotting helper.
+
+        Returns:
+            Matplotlib (fig, ax) tuple.
+        """
+        availability = self.get_device_availability(
+            device_code,
+            start_date=start_date,
+            end_date=end_date,
+            timezone_str=timezone_str,
+            bin_size=bin_size,
+            max_days_per_request=max_days_per_request,
+        )
+        if style == 'calendar':
+            from ..utils.plotting import plot_availability_calendar
+            return plot_availability_calendar(availability, **plot_kwargs)
+        if style == 'timeline':
+            from ..utils.plotting import plot_deployment_availability_timeline
+            return plot_deployment_availability_timeline(availability, **plot_kwargs)
+        raise ValueError("style must be 'timeline' or 'calendar'")
     
     def find_best_deployments_for_date_range(self, 
                                            start_date: Union[str, datetime], 
@@ -657,6 +946,52 @@ class HydrophoneDeploymentChecker:
             self._location_paths_built = True
         except Exception as e:
             logging.warning(f"Failed to build location hierarchy: {e}")
+
+    def _get_cached_deployments(self, max_age_minutes: int = 30) -> List[DeploymentInfo]:
+        """Return cached deployments if fresh, otherwise fetch new ones."""
+        now = datetime.now(timezone.utc)
+        if (
+            self._deployments_cache is not None
+            and self._deployments_cache_at is not None
+            and (now - self._deployments_cache_at).total_seconds() < max_age_minutes * 60
+        ):
+            return self._deployments_cache
+
+        self._deployments_cache = self.get_all_hydrophone_deployments()
+        self._deployments_cache_at = now
+        return self._deployments_cache
+
+    def _get_device_deployments(self, device_code: str, max_age_minutes: int = 30) -> List[DeploymentInfo]:
+        """Fetch deployments for a single device (cached) for faster queries."""
+        now = datetime.now(timezone.utc)
+        cached = self._device_deployments_cache.get(device_code)
+        cached_at = self._device_deployments_cache_at.get(device_code)
+        if cached is not None and cached_at is not None:
+            if (now - cached_at).total_seconds() < max_age_minutes * 60:
+                return cached
+
+        self._build_location_cache()
+        try:
+            deployments = self.onc.getDeployments({"deviceCode": device_code})
+        except Exception as exc:
+            if self.debug:
+                logging.warning(f"Failed to fetch deployments for {device_code}: {exc}")
+            deployments = []
+
+        parsed: List[DeploymentInfo] = []
+        if isinstance(deployments, list):
+            for dep in deployments:
+                if not isinstance(dep, dict):
+                    continue
+                # Ensure deviceCode is present for parsing
+                dep.setdefault("deviceCode", device_code)
+                deployment_info = self._parse_deployment(dep)
+                if deployment_info:
+                    parsed.append(deployment_info)
+
+        self._device_deployments_cache[device_code] = parsed
+        self._device_deployments_cache_at[device_code] = now
+        return parsed
     
     def _get_deployments_parallel(self, hydrophones: List[Dict], max_workers: int = 10) -> List[Dict]:
         """Fetch deployments for multiple hydrophones in parallel."""
@@ -863,6 +1198,226 @@ class HydrophoneDeploymentChecker:
         
         print()  # New line after progress
         return results
+
+    def _coerce_datetime(self, value: Union[str, datetime], tz) -> datetime:
+        if isinstance(value, str):
+            dt = dtparse.parse(value)
+        else:
+            dt = ensure_timezone_aware(value, tz=tz)
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=tz)
+        return dt.astimezone(tz)
+
+    def _align_to_bin_start(self, dt_obj: datetime, bin_size: str) -> datetime:
+        if bin_size == 'day':
+            return dt_obj.replace(hour=0, minute=0, second=0, microsecond=0)
+        if bin_size == 'hour':
+            return dt_obj.replace(minute=0, second=0, microsecond=0)
+        raise ValueError("bin_size must be 'day' or 'hour'")
+
+    def _iter_bins(self, start_local: datetime, end_local: datetime, bin_size: str):
+        step = timedelta(days=1) if bin_size == 'day' else timedelta(hours=1)
+        current = start_local
+        while current < end_local:
+            nxt = current + step
+            yield current, min(nxt, end_local)
+            current = nxt
+
+    def _fetch_archive_intervals(
+        self,
+        device_code: str,
+        start_utc: datetime,
+        end_utc: datetime,
+        *,
+        max_days_per_request: int = 60,
+        progress: Optional[Any] = None,
+        quiet: bool = True,
+        max_workers: int = 4,
+        request_delay_seconds: float = 0.0,
+    ) -> List[Tuple[datetime, datetime]]:
+        if end_utc <= start_utc:
+            return []
+        intervals: List[Tuple[datetime, datetime]] = []
+        if max_days_per_request and max_days_per_request > 0:
+            step = timedelta(days=max_days_per_request)
+        else:
+            step = end_utc - start_utc
+        cache_key = (
+            device_code,
+            format_iso_utc(start_utc),
+            format_iso_utc(end_utc),
+            max_days_per_request,
+        )
+        cached = self._archive_cache.get(cache_key)
+        if cached is not None:
+            return list(cached)
+
+        chunks: List[Tuple[datetime, datetime]] = []
+        current = start_utc
+        while current < end_utc:
+            chunk_end = min(end_utc, current + step)
+            chunks.append((current, chunk_end))
+            current = chunk_end
+
+        total_chunks = len(chunks)
+        if progress is not None:
+            try:
+                progress(total=total_chunks, advance=0)
+            except Exception:
+                pass
+
+        def fetch_chunk(chunk: Tuple[datetime, datetime]):
+            chunk_start, chunk_end = chunk
+            archive_filters = {
+                'deviceCode': device_code,
+                'dateFrom': format_iso_utc(chunk_start),
+                'dateTo': format_iso_utc(chunk_end),
+                'returnOptions': 'all',
+            }
+            try:
+                if request_delay_seconds and request_delay_seconds > 0:
+                    import time as _time
+                    _time.sleep(request_delay_seconds)
+                if quiet:
+                    import io
+                    import contextlib
+                    import warnings
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                            list_result = self.onc.getArchivefile(filters=archive_filters, allPages=True)
+                else:
+                    list_result = self.onc.getArchivefile(filters=archive_filters, allPages=True)
+            except Exception as exc:
+                if self.debug:
+                    logging.warning(f"Archive query failed for {device_code}: {exc}")
+                list_result = None
+            return self._extract_archive_file_intervals(list_result)
+
+        if max_workers and max_workers > 1 and len(chunks) > 1:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = [executor.submit(fetch_chunk, chunk) for chunk in chunks]
+                for future in concurrent.futures.as_completed(futures):
+                    try:
+                        intervals.extend(future.result())
+                    except Exception as exc:
+                        if self.debug:
+                            logging.warning(f"Archive chunk failed for {device_code}: {exc}")
+                    if progress is not None:
+                        try:
+                            progress(total=total_chunks, advance=1)
+                        except Exception:
+                            pass
+        else:
+            for chunk in chunks:
+                intervals.extend(fetch_chunk(chunk))
+                if progress is not None:
+                    try:
+                        progress(total=total_chunks, advance=1)
+                    except Exception:
+                        pass
+        self._archive_cache[cache_key] = list(intervals)
+        return intervals
+
+    def _extract_archive_file_intervals(self, archive_response: Any) -> List[Tuple[datetime, datetime]]:
+        files: List[Any] = []
+        if isinstance(archive_response, dict):
+            files = archive_response.get('files') or archive_response.get('data') or archive_response.get('results') or []
+        elif isinstance(archive_response, list):
+            files = archive_response
+        if not files:
+            return []
+
+        intervals: List[Tuple[datetime, datetime]] = []
+        for record in files:
+            if not isinstance(record, dict):
+                continue
+            start = self._parse_timestamp(
+                record.get('dateFrom') or record.get('begin') or record.get('start') or
+                record.get('startTime') or record.get('fileStart') or record.get('timeFrom') or
+                record.get('timeStart') or record.get('timestamp')
+            )
+            end = self._parse_timestamp(
+                record.get('dateTo') or record.get('end') or record.get('stop') or
+                record.get('endTime') or record.get('fileEnd') or record.get('timeTo') or
+                record.get('timeEnd')
+            )
+            if start is not None and end is None:
+                duration = self._parse_duration_seconds(record)
+                if duration is not None:
+                    end = start + timedelta(seconds=duration)
+            if start is None or end is None:
+                continue
+            if end < start:
+                start, end = end, start
+            intervals.append((start, end))
+        return intervals
+
+    def _parse_timestamp(self, value: Any) -> Optional[datetime]:
+        if value is None:
+            return None
+        if isinstance(value, datetime):
+            dt = value
+        elif isinstance(value, bytes):
+            try:
+                dt = dtparse.parse(value.decode())
+            except Exception:
+                return None
+        elif isinstance(value, (int, float)):
+            try:
+                if value > 1e12:
+                    dt = datetime.fromtimestamp(value / 1000.0, tz=timezone.utc)
+                elif value > 1e10:
+                    dt = datetime.fromtimestamp(value / 1000.0, tz=timezone.utc)
+                else:
+                    dt = datetime.fromtimestamp(value, tz=timezone.utc)
+            except Exception:
+                return None
+        elif isinstance(value, str):
+            try:
+                dt = dtparse.parse(value)
+            except Exception:
+                return None
+        else:
+            return None
+
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+
+    def _parse_duration_seconds(self, record: Dict[str, Any]) -> Optional[float]:
+        for key in (
+            'duration',
+            'durationSeconds',
+            'fileDuration',
+            'duration_sec',
+            'durationSecs',
+            'seconds',
+        ):
+            value = record.get(key)
+            if value is None:
+                continue
+            try:
+                return float(value)
+            except Exception:
+                continue
+        return None
+
+    def _merge_intervals(self, intervals: List[Tuple[datetime, datetime]]) -> List[Tuple[datetime, datetime]]:
+        if not intervals:
+            return []
+        intervals_sorted = sorted(intervals, key=lambda x: x[0])
+        merged: List[Tuple[datetime, datetime]] = []
+        current_start, current_end = intervals_sorted[0]
+        for start, end in intervals_sorted[1:]:
+            if start > current_end:
+                merged.append((current_start, current_end))
+                current_start, current_end = start, end
+            else:
+                if end > current_end:
+                    current_end = end
+        merged.append((current_start, current_end))
+        return merged
 
 
 def interactive_deployment_selector(checker: HydrophoneDeploymentChecker,

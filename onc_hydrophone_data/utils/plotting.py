@@ -12,6 +12,7 @@ from typing import Iterable, Optional, Any
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.colors as mcolors
 import scipy.io
 
 try:
@@ -283,6 +284,248 @@ def plot_spectrogram_clip(
     plt.show()
 
 
+def plot_deployment_availability_timeline(
+    availability: dict,
+    *,
+    title: Optional[str] = None,
+    data_color: str = "#2ca02c",
+    missing_color: str = "#d62728",
+    deployment_color: str = "#e6e6e6",
+    show_coverage: bool = True,
+    show: bool = True,
+):
+    """
+    Plot a deployment-aware availability timeline.
+
+    Args:
+        availability: Output from HydrophoneDeploymentChecker.get_device_availability.
+        title: Optional plot title.
+        data_color: Color for bins with data.
+        missing_color: Color for bins without data.
+        deployment_color: Background color for deployment windows.
+        show_coverage: Annotate per-deployment coverage percentage.
+        show: If True, call plt.show().
+    """
+    bins = availability.get('bins') or []
+    deployments = availability.get('deployments') or []
+    if not bins or not deployments:
+        print("No availability data to plot.")
+        return None
+
+    bins_by_dep = {}
+    for b in bins:
+        dep_idx = b.get('deployment_index')
+        if dep_idx is None:
+            continue
+        bins_by_dep.setdefault(dep_idx, []).append(b)
+
+    for dep_idx in bins_by_dep:
+        bins_by_dep[dep_idx] = sorted(bins_by_dep[dep_idx], key=lambda x: x['start'])
+
+    row_height = 0.6
+    row_gap = 0.3
+    fig_height = max(2.0, len(deployments) * (row_height + row_gap) + 1.0)
+    fig, ax = plt.subplots(figsize=(12, fig_height))
+
+    y_ticks = []
+    y_labels = []
+    range_start = availability.get('start')
+    range_end = availability.get('end')
+    summary_by_idx = {
+        entry.get('deployment_index'): entry
+        for entry in (availability.get('deployment_summary') or [])
+    }
+
+    for i, dep in enumerate(deployments):
+        y = i * (row_height + row_gap)
+        y_ticks.append(y + row_height / 2)
+        y_labels.append(_deployment_label(dep))
+
+        dep_start = getattr(dep, "begin_date", None)
+        dep_end = getattr(dep, "end_date", None) or range_end
+        if dep_start is None or dep_end is None:
+            continue
+        if range_start is not None:
+            dep_start = max(dep_start, range_start)
+        if range_end is not None:
+            dep_end = min(dep_end, range_end)
+        if dep_end <= dep_start:
+            continue
+
+        start_num = mdates.date2num(_strip_tz(dep_start))
+        end_num = mdates.date2num(_strip_tz(dep_end))
+        ax.broken_barh(
+            [(start_num, end_num - start_num)],
+            (y, row_height),
+            facecolor=deployment_color,
+            edgecolor='none',
+        )
+
+        for status, seg_start, seg_end in _segments_from_bins(bins_by_dep.get(i, [])):
+            seg_start_num = mdates.date2num(_strip_tz(seg_start))
+            seg_end_num = mdates.date2num(_strip_tz(seg_end))
+            width = seg_end_num - seg_start_num
+            if width <= 0:
+                continue
+            color = data_color if status == 'data' else missing_color
+            ax.broken_barh(
+                [(seg_start_num, width)],
+                (y, row_height),
+                facecolor=color,
+                edgecolor='none',
+            )
+
+        if show_coverage and i in summary_by_idx:
+            coverage = summary_by_idx[i].get('coverage_ratio', 0.0) * 100.0
+            label_x = mdates.date2num(_strip_tz(range_end or dep_end)) + 2
+            ax.text(label_x, y + row_height / 2, f"{coverage:.0f}%", va='center', fontsize=9)
+
+    ax.set_yticks(y_ticks)
+    ax.set_yticklabels(y_labels)
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
+    ax.grid(axis='x', alpha=0.2)
+    ax.set_ylim(-0.2, len(deployments) * (row_height + row_gap))
+
+    if title is None:
+        device_code = availability.get('device_code', 'device')
+        title = f"Deployment availability for {device_code}"
+    ax.set_title(title)
+
+    from matplotlib.patches import Patch
+    legend_items = [
+        Patch(facecolor=data_color, label="Data available"),
+        Patch(facecolor=missing_color, label="No data"),
+        Patch(facecolor=deployment_color, label="Deployment window"),
+    ]
+    ax.legend(handles=legend_items, loc='upper right', frameon=False)
+
+    fig.tight_layout()
+    if show:
+        plt.show()
+    return fig, ax
+
+
+def plot_availability_calendar(
+    availability: dict,
+    *,
+    title: Optional[str] = None,
+    data_cmap: str = "Greens",
+    missing_color: str = "#d62728",
+    not_deployed_color: str = "#eeeeee",
+    show: bool = True,
+):
+    """
+    Plot a calendar-style daily availability heatmap.
+
+    Args:
+        availability: Output from HydrophoneDeploymentChecker.get_device_availability.
+        title: Optional plot title.
+        data_cmap: Colormap for data coverage (0-1).
+        missing_color: Color for days with no data during deployment.
+        not_deployed_color: Color for days outside deployments.
+        show: If True, call plt.show().
+    """
+    bins = availability.get('bins') or []
+    if not bins:
+        print("No availability data to plot.")
+        return None
+    if availability.get('bin_size') != 'day':
+        raise ValueError("plot_availability_calendar requires bin_size='day'")
+
+    date_to_bin = {b['start'].date(): b for b in bins if b.get('start') is not None}
+    start_dt = availability.get('start') or bins[0]['start']
+    end_dt = availability.get('end') or bins[-1]['end']
+    if start_dt is None or end_dt is None:
+        print("Availability window is empty.")
+        return None
+
+    start_date = start_dt.date()
+    end_date = end_dt.date()
+    week0_start = start_date - timedelta(days=start_date.weekday())
+    total_days = (end_date - start_date).days
+    num_weeks = ((end_date - week0_start).days // 7) + 1
+
+    grid = np.zeros((7, num_weeks, 4))
+    grid[:, :, 3] = 0.0
+    cmap = plt.get_cmap(data_cmap)
+    missing_rgba = mcolors.to_rgba(missing_color)
+    not_deployed_rgba = mcolors.to_rgba(not_deployed_color)
+
+    for offset in range(total_days + 1):
+        day = start_date + timedelta(days=offset)
+        week_idx = (day - week0_start).days // 7
+        dow = day.weekday()
+        bin_entry = date_to_bin.get(day)
+        if bin_entry is None or bin_entry.get('status') == 'not_deployed':
+            color = not_deployed_rgba
+        else:
+            coverage = bin_entry.get('coverage') or 0.0
+            if coverage <= 0:
+                color = missing_rgba
+            else:
+                color = cmap(coverage)
+        grid[dow, week_idx] = color
+
+    width = min(18, max(8, num_weeks * 0.35))
+    fig, ax = plt.subplots(figsize=(width, 3.2))
+    ax.imshow(grid, aspect='auto', interpolation='none', origin='upper')
+
+    ax.set_yticks(range(7))
+    ax.set_yticklabels(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
+
+    month_ticks = []
+    month_labels = []
+    cursor = datetime(start_date.year, start_date.month, 1).date()
+    if cursor < start_date:
+        if cursor.month == 12:
+            cursor = datetime(cursor.year + 1, 1, 1).date()
+        else:
+            cursor = datetime(cursor.year, cursor.month + 1, 1).date()
+    while cursor <= end_date:
+        week_idx = (cursor - week0_start).days // 7
+        month_ticks.append(week_idx)
+        label = cursor.strftime('%b %Y') if cursor.month == 1 else cursor.strftime('%b')
+        month_labels.append(label)
+        if cursor.month == 12:
+            cursor = datetime(cursor.year + 1, 1, 1).date()
+        else:
+            cursor = datetime(cursor.year, cursor.month + 1, 1).date()
+
+    ax.set_xticks(month_ticks)
+    ax.set_xticklabels(month_labels)
+    ax.set_xlabel("Week")
+    ax.set_ylabel("Day")
+
+    norm = mcolors.Normalize(vmin=0, vmax=1)
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=ax, fraction=0.02, pad=0.02)
+    cbar.set_label("Data coverage")
+
+    from matplotlib.patches import Patch
+    legend_items = [
+        Patch(facecolor=missing_color, label="No data"),
+        Patch(facecolor=not_deployed_color, label="Not deployed"),
+    ]
+    ax.legend(handles=legend_items, loc='upper right', frameon=False)
+
+    if title is None:
+        device_code = availability.get('device_code', 'device')
+        title = f"Daily availability calendar for {device_code}"
+    ax.set_title(title)
+
+    ax.set_xlim(-0.5, num_weeks - 0.5)
+    ax.grid(False)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+
+    fig.tight_layout()
+    if show:
+        plt.show()
+    return fig, ax
+
+
 def describe_spec_clip(clip_path: str | Path) -> Optional[dict]:
     """Print spectrogram clip timing metadata and return parsed values."""
     clip_path = Path(clip_path)
@@ -347,6 +590,353 @@ def plot_request_results(
                 plot_spectrogram_clip(spec_clip, title=f"Spectrogram clip {result.get('timestamp')}")
             if audio_clip:
                 plot_audio_waveform(audio_clip, max_seconds=None)
+
+
+def _strip_tz(dt_obj: datetime) -> datetime:
+    if dt_obj.tzinfo is None:
+        return dt_obj
+    return dt_obj.replace(tzinfo=None)
+
+
+def _segments_from_bins(bins: list[dict]) -> list[tuple[str, datetime, datetime]]:
+    if not bins:
+        return []
+    segments: list[tuple[str, datetime, datetime]] = []
+    current_status = None
+    current_start = None
+    current_end = None
+    for b in sorted(bins, key=lambda x: x['start']):
+        status = 'data' if (b.get('coverage') or 0) > 0 else 'no_data'
+        if current_status is None:
+            current_status = status
+            current_start = b['start']
+            current_end = b['end']
+            continue
+        if status == current_status and b['start'] == current_end:
+            current_end = b['end']
+            continue
+        segments.append((current_status, current_start, current_end))
+        current_status = status
+        current_start = b['start']
+        current_end = b['end']
+    if current_status is not None:
+        segments.append((current_status, current_start, current_end))
+    return segments
+
+
+def _deployment_label(dep: Any) -> str:
+    location = getattr(dep, "location_name", None) or getattr(dep, "location_code", None) or ""
+    position = getattr(dep, "position_name", None)
+    if position and position != location:
+        location = f"{location} ({position})" if location else position
+    begin = getattr(dep, "begin_date", None)
+    end = getattr(dep, "end_date", None)
+    begin_str = begin.strftime('%Y-%m-%d') if isinstance(begin, datetime) else "?"
+    end_str = end.strftime('%Y-%m-%d') if isinstance(end, datetime) else "ongoing"
+    label = location or getattr(dep, "device_code", "") or "deployment"
+    return f"{label} ({begin_str} to {end_str})"
+
+
+def availability_widget(
+    checker: Any,
+    *,
+    inventory: Optional[dict] = None,
+    device_codes: Optional[list[str]] = None,
+    default_device: Optional[str] = None,
+    timezone_str: str = "UTC",
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    bin_size: str = "day",
+    max_days_per_request: int = 60,
+    auto_run: bool = True,
+    max_workers: int = 4,
+    request_delay_seconds: float = 0.0,
+):
+    """Build an interactive Plotly + ipywidgets availability explorer."""
+    try:
+        import ipywidgets as widgets  # type: ignore
+    except Exception as exc:
+        raise ImportError("ipywidgets is required for availability_widget") from exc
+    try:
+        import pandas as pd  # type: ignore
+        import plotly.express as px  # type: ignore
+        import plotly.graph_objects as go  # type: ignore
+    except Exception as exc:
+        raise ImportError("plotly and pandas are required for availability_widget") from exc
+    try:
+        from IPython.display import display  # type: ignore
+    except Exception as exc:
+        raise ImportError("IPython is required for availability_widget") from exc
+
+    if device_codes is None:
+        if inventory is None:
+            inventory = checker.collect_hydrophone_inventory()
+        device_codes = sorted({
+            row.get('device_code')
+            for row in (inventory.get('history') or [])
+            if row.get('device_code')
+        })
+
+    if not device_codes:
+        raise ValueError("No device codes available for widget")
+
+    if default_device is None:
+        default_device = device_codes[0]
+
+    def _coerce_date(value, include_full_day: bool = False):
+        if value is None:
+            return None
+        if isinstance(value, datetime):
+            dt = value
+        else:
+            dt = datetime(value.year, value.month, value.day)
+        if include_full_day:
+            dt = dt + timedelta(days=1)
+        return dt
+
+    def _build_timeline(availability: dict) -> "go.Figure":
+        bins = availability.get('bins') or []
+        deployments = availability.get('deployments') or []
+        if not bins or not deployments:
+            fig = go.Figure()
+            fig.add_annotation(text="No availability data to plot.", showarrow=False)
+            return fig
+
+        bins_by_dep: dict[int, list[dict]] = {}
+        for b in bins:
+            dep_idx = b.get('deployment_index')
+            if dep_idx is None:
+                continue
+            bins_by_dep.setdefault(dep_idx, []).append(b)
+
+        segments = []
+        for dep_idx, dep in enumerate(deployments):
+            label = _deployment_label(dep)
+            for status, seg_start, seg_end in _segments_from_bins(bins_by_dep.get(dep_idx, [])):
+                segments.append({
+                    'deployment': label,
+                    'start': seg_start,
+                    'end': seg_end,
+                    'status': status,
+                })
+
+        if not segments:
+            fig = go.Figure()
+            fig.add_annotation(text="No availability data to plot.", showarrow=False)
+            return fig
+
+        df = pd.DataFrame(segments)
+        color_map = {
+            'data': "#2ca02c",
+            'no_data': "#d62728",
+        }
+        fig = px.timeline(
+            df,
+            x_start="start",
+            x_end="end",
+            y="deployment",
+            color="status",
+            color_discrete_map=color_map,
+        )
+        fig.update_yaxes(autorange="reversed")
+        fig.update_layout(
+            height=max(350, len(deployments) * 40 + 120),
+            legend_orientation="h",
+            legend_y=-0.15,
+            margin=dict(l=40, r=20, t=40, b=40),
+        )
+        return fig
+
+    def _build_calendar(availability: dict) -> "go.Figure":
+        bins = availability.get('bins') or []
+        if not bins:
+            fig = go.Figure()
+            fig.add_annotation(text="No availability data to plot.", showarrow=False)
+            return fig
+        if availability.get('bin_size') != 'day':
+            fig = go.Figure()
+            fig.add_annotation(text="Calendar view requires daily bins.", showarrow=False)
+            return fig
+
+        date_to_bin = {b['start'].date(): b for b in bins if b.get('start') is not None}
+        start_dt = availability.get('start') or bins[0]['start']
+        end_dt = availability.get('end') or bins[-1]['end']
+        if start_dt is None or end_dt is None:
+            fig = go.Figure()
+            fig.add_annotation(text="Availability window is empty.", showarrow=False)
+            return fig
+
+        start_date = start_dt.date()
+        end_date = end_dt.date()
+        week0_start = start_date - timedelta(days=start_date.weekday())
+        total_days = (end_date - start_date).days
+        num_weeks = ((end_date - week0_start).days // 7) + 1
+        week_starts = [week0_start + timedelta(days=7 * i) for i in range(num_weeks)]
+
+        z = [[None for _ in range(num_weeks)] for _ in range(7)]
+        text = [[None for _ in range(num_weeks)] for _ in range(7)]
+        for offset in range(total_days + 1):
+            day = start_date + timedelta(days=offset)
+            week_idx = (day - week0_start).days // 7
+            dow = day.weekday()
+            bin_entry = date_to_bin.get(day)
+            if bin_entry is None or bin_entry.get('status') == 'not_deployed':
+                value = -1.0
+                label = "not deployed"
+                coverage_pct = 0
+            else:
+                coverage = bin_entry.get('coverage') or 0.0
+                if coverage <= 0:
+                    value = 0.0
+                    label = "no data"
+                    coverage_pct = 0
+                else:
+                    value = coverage
+                    label = "data"
+                    coverage_pct = int(round(coverage * 100))
+            z[dow][week_idx] = value
+            text[dow][week_idx] = f"{day} • {label} • {coverage_pct}%"
+
+        colorscale = [
+            [0.0, "#eeeeee"],
+            [0.49, "#eeeeee"],
+            [0.5, "#d62728"],
+            [0.52, "#b7e1cd"],
+            [1.0, "#2ca02c"],
+        ]
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=z,
+                x=week_starts,
+                y=["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+                colorscale=colorscale,
+                zmin=-1,
+                zmax=1,
+                hoverinfo="text",
+                text=text,
+                xgap=2,
+                ygap=2,
+                colorbar=dict(title="Coverage"),
+            )
+        )
+        fig.update_layout(
+            height=320,
+            margin=dict(l=40, r=20, t=40, b=40),
+            xaxis=dict(
+                tickformat="%b %Y",
+                showgrid=False,
+                ticklabelmode="period",
+            ),
+            yaxis=dict(autorange="reversed"),
+        )
+        return fig
+
+    device_dropdown = widgets.Dropdown(
+        options=device_codes,
+        value=default_device if default_device in device_codes else device_codes[0],
+        description="Device",
+        layout=widgets.Layout(width="300px"),
+    )
+    start_picker = widgets.DatePicker(
+        description="Start",
+        value=start_date.date() if isinstance(start_date, datetime) else None,
+    )
+    end_picker = widgets.DatePicker(
+        description="End",
+        value=end_date.date() if isinstance(end_date, datetime) else None,
+    )
+    tz_input = widgets.Text(
+        value=timezone_str,
+        description="Timezone",
+        placeholder="UTC",
+        layout=widgets.Layout(width="220px"),
+    )
+    bin_dropdown = widgets.Dropdown(
+        options=["day", "hour"],
+        value=bin_size if bin_size in ("day", "hour") else "day",
+        description="Bins",
+        layout=widgets.Layout(width="180px"),
+    )
+    view_toggle = widgets.ToggleButtons(
+        options=[("Timeline", "timeline"), ("Calendar", "calendar")],
+        value="timeline",
+        description="View",
+    )
+    update_button = widgets.Button(
+        description="Update",
+        button_style="primary",
+        icon="refresh",
+    )
+    status = widgets.HTML("")
+    output = widgets.Output()
+    fig_widget = go.FigureWidget()
+
+    def _on_view_change(change):
+        if change["new"] == "calendar":
+            bin_dropdown.value = "day"
+            bin_dropdown.disabled = True
+        else:
+            bin_dropdown.disabled = False
+
+    view_toggle.observe(_on_view_change, names="value")
+
+    def _update(_=None):
+        status.value = ""
+        try:
+            start_dt = _coerce_date(start_picker.value)
+            end_dt = _coerce_date(end_picker.value, include_full_day=True)
+            effective_bin = "day" if view_toggle.value == "calendar" else bin_dropdown.value
+            try:
+                from tqdm.auto import tqdm  # type: ignore
+            except Exception:
+                tqdm = None
+
+            progress_bar = None
+            if tqdm is not None:
+                progress_bar = tqdm(total=0, desc="Querying archive", leave=False)
+
+            def _progress(total=0, advance=0):
+                if progress_bar is None:
+                    return
+                if total and progress_bar.total != total:
+                    progress_bar.reset(total=total)
+                if advance:
+                    progress_bar.update(advance)
+
+            availability = checker.get_device_availability(
+                device_dropdown.value,
+                start_date=start_dt,
+                end_date=end_dt,
+                timezone_str=tz_input.value or "UTC",
+                bin_size=effective_bin,
+                max_days_per_request=max_days_per_request,
+                progress=_progress,
+                quiet=True,
+                max_workers=max_workers,
+                request_delay_seconds=request_delay_seconds,
+            )
+            if progress_bar is not None:
+                progress_bar.close()
+            fig = _build_calendar(availability) if view_toggle.value == "calendar" else _build_timeline(availability)
+            fig_widget.data = []
+            fig_widget.layout = go.Layout()
+            for trace in fig.data:
+                fig_widget.add_trace(trace)
+            fig_widget.update_layout(fig.layout)
+        except Exception as exc:
+            status.value = f"<b>Error:</b> {exc}"
+
+    update_button.on_click(_update)
+    if auto_run:
+        _update()
+
+    controls = widgets.VBox([
+        widgets.HBox([device_dropdown, view_toggle]),
+        widgets.HBox([start_picker, end_picker, tz_input]),
+        widgets.HBox([bin_dropdown, update_button]),
+        status,
+    ])
+    return widgets.VBox([controls, fig_widget])
 
 
 def _load_audio_data(audio_path: str | Path) -> tuple[Optional[np.ndarray], Optional[float]]:

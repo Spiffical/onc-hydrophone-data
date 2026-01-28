@@ -75,6 +75,21 @@ python scripts/download_hydrophone_data.py --mode sampling \
 python scripts/generate_spectrograms.py --input-dir data/DEVICE/audio/ --win-dur 2.0
 ```
 
+### Deployment Availability Visualization
+
+```python
+from onc_hydrophone_data.data.deployment_checker import HydrophoneDeploymentChecker
+from onc_hydrophone_data.utils import (
+    plot_deployment_availability_timeline,
+    plot_availability_calendar,
+)
+
+checker = HydrophoneDeploymentChecker(onc_token)
+availability = checker.get_device_availability("ICLISTENHF6324", bin_size="day")
+plot_deployment_availability_timeline(availability)
+plot_availability_calendar(availability)
+```
+
 ## ✨ Features
 
 - **Smart Sampling**: Intelligently distributes downloads across date ranges
@@ -82,6 +97,7 @@ python scripts/generate_spectrograms.py --input-dir data/DEVICE/audio/ --win-dur
 - **Audio Downloads**: Download raw audio (FLAC/WAV) alongside spectrograms
 - **Custom Spectrograms**: Generate spectrograms with configurable parameters
 - **Deployment Validation**: Ensures data exists for requested time periods
+- **Deployment Availability Visuals**: Timeline/calendar views of data availability by device
 - **Interactive Mode**: Guided CLI for easy setup
 
 ## 📁 Output Structure
@@ -101,8 +117,6 @@ data/
             ├── mat/              # Custom MAT files
             └── png/              # Custom PNG plots
 ```
-
-**Note:** Unlike previous versions, there are no `processed/` or `rejects/` subdirectories. All files stay in flat directories for simplicity.
 
 ## 🛠️ Troubleshooting
 
