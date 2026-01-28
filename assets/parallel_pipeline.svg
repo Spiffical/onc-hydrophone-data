@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="220" viewBox="0 0 900 220">
+  <defs>
+    <style>
+      .box { fill: #f7f7f7; stroke: #222; stroke-width: 2; }
+      .arrow { stroke: #222; stroke-width: 2; marker-end: url(#arrowhead); }
+      .label { font-family: Arial, sans-serif; font-size: 14px; fill: #111; }
+      .title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #111; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#222" />
+    </marker>
+  </defs>
+  <text x="20" y="24" class="title">Parallel ONC Request Pipeline</text>
+  <rect x="20" y="50" width="190" height="60" class="box" rx="8" />
+  <text x="35" y="80" class="label">Submit all requests</text>
+
+  <rect x="250" y="50" width="210" height="60" class="box" rx="8" />
+  <text x="265" y="72" class="label">ONC servers process</text>
+  <text x="265" y="92" class="label">requests in parallel</text>
+
+  <rect x="500" y="50" width="170" height="60" class="box" rx="8" />
+  <text x="515" y="80" class="label">Poll for readiness</text>
+
+  <rect x="710" y="50" width="170" height="60" class="box" rx="8" />
+  <text x="730" y="80" class="label">Download results</text>
+
+  <line x1="210" y1="80" x2="250" y2="80" class="arrow" />
+  <line x1="460" y1="80" x2="500" y2="80" class="arrow" />
+  <line x1="670" y1="80" x2="710" y2="80" class="arrow" />
+
+  <text x="20" y="150" class="label">
+    This pipeline submits multiple requests immediately and lets ONC execute them in parallel.
+  </text>
+  <text x="20" y="175" class="label">
+    Your machine only polls and downloads when ready — no local parallelism required.
+  </text>
+</svg>
