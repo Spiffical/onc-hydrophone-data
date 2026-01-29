@@ -1,3 +1,7 @@
+# Use CPU-only PyTorch wheels by default.
+--index-url https://download.pytorch.org/whl/cpu
+--extra-index-url https://pypi.org/simple
+
 onc>=2.3.0
 numpy>=1.20.0
 scipy>=1.7.3

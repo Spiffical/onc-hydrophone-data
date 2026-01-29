@@ -13,6 +13,13 @@ Tools for downloading and processing Ocean Networks Canada hydrophone data, incl
 pip install onc-hydrophone-data
 ```
 
+If you want CPU-only PyTorch (recommended for spectrogram generation on most hosts):
+```bash
+pip install onc-hydrophone-data \
+  --index-url https://download.pytorch.org/whl/cpu \
+  --extra-index-url https://pypi.org/simple
+```
+
 For development:
 ```bash
 git clone https://github.com/Spiffical/onc-hydrophone-data.git

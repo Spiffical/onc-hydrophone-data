@@ -84,6 +84,7 @@ class SpectrogramGenerator:
                  clip_end: Optional[float] = None,
                  clip_pad_seconds: Union[float, str, None] = 'auto',
                  backend: str = 'auto',
+                 torch_device: str = 'cpu',
                  scaling: str = 'density',
                  quiet: bool = False,
                  use_logging: bool = True):
@@ -110,6 +111,7 @@ class SpectrogramGenerator:
                 before the STFT; the spectrogram is trimmed back to the target window.
                 Use 'auto' to pad by half the window length (helps reduce edge artifacts).
             backend: 'auto' (default), 'torch', or 'scipy' backend for spectrogram computation
+            torch_device: Torch device for spectrogram computation ('cpu', 'cuda', or 'auto')
             scaling: 'density' (default) or 'spectrum' scaling for PSD normalization
             quiet: If True, suppress logger noise (only minimal prints for progress bar)
             use_logging: If False, fall back to stdout printing (avoids notebook logging friction)
@@ -130,6 +132,7 @@ class SpectrogramGenerator:
         self.clip_end = clip_end
         self.clip_pad_seconds = clip_pad_seconds
         self.backend = backend
+        self.torch_device = torch_device
         self.scaling = scaling
         self.quiet = quiet
         self.log = logger if use_logging else PrintLogger()
@@ -395,7 +398,22 @@ class SpectrogramGenerator:
             backend = 'auto'
         
         if backend != 'scipy' and HAS_TORCH:
-            device = 'cpu'
+            requested_device = 'cpu'
+            if self.torch_device is not None:
+                requested_device = str(self.torch_device).strip().lower() or 'cpu'
+            if requested_device == 'auto':
+                device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            elif requested_device.startswith('cuda'):
+                if torch.cuda.is_available():
+                    device = requested_device
+                else:
+                    self.log.warning(f"Torch device '{requested_device}' requested but CUDA is unavailable; using CPU.")
+                    device = 'cpu'
+            elif requested_device == 'cpu':
+                device = 'cpu'
+            else:
+                self.log.warning(f"Unknown torch_device '{self.torch_device}'; using CPU.")
+                device = 'cpu'
             use_torch_backend = True
         elif backend == 'torch' and not HAS_TORCH:
             self.log.warning("Torch backend requested but torch/torchaudio is unavailable; using SciPy.")
@@ -469,6 +487,7 @@ class SpectrogramGenerator:
         backend_used = 'torch' if use_torch_backend else 'scipy'
         self._last_backend = backend_used
         self._last_scaling = scaling
+        self._last_device = device if backend_used == 'torch' else None
 
         # Normalize and convert to dB (following MATLAB: 10*log10(abs(P./max(P,[],'all'))))
         max_power = np.max(np.abs(Sxx))
