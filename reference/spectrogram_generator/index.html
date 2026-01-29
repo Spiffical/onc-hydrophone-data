@@ -1,0 +1,3376 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="User guide and API reference for downloading ONC hydrophone data.">
+      
+      
+        <meta name="author" content="ONC Hydrophone Data Contributors">
+      
+      
+        <link rel="canonical" href="https://spiffical.github.io/onc-hydrophone-data/reference/spectrogram_generator/">
+      
+      
+        <link rel="prev" href="../deployment_checker/">
+      
+      
+        <link rel="next" href="../onc_common/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Spectrogram Generator - ONC Hydrophone Data</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#spectrogramgenerator" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="ONC Hydrophone Data" class="md-header__button md-logo" aria-label="ONC Hydrophone Data" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ONC Hydrophone Data
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Spectrogram Generator
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Spiffical/onc-hydrophone-data" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Spiffical/onc-hydrophone-data
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../quickstart/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../inventory/" class="md-tabs__link">
+          
+  
+  
+  Workflows
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="ONC Hydrophone Data" class="md-nav__button md-logo" aria-label="ONC Hydrophone Data" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    ONC Hydrophone Data
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Spiffical/onc-hydrophone-data" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Spiffical/onc-hydrophone-data
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflows
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Workflows
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../inventory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployments & Inventory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../downloads/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Downloads
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../custom_spectrograms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Spectrograms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../downloader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HydrophoneDownloader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment_checker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment Checker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Spectrogram Generator
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Spectrogram Generator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SpectrogramGenerator
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        backend
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.clim" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clim
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.clip_end" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clip_end
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.clip_pad_seconds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clip_pad_seconds
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.clip_start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clip_start
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.colormap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        colormap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.crop_freq_lims" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        crop_freq_lims
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.freq_lims" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        freq_lims
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.hop_length" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        hop_length
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        log
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.log_freq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        log_freq
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.max_duration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        max_duration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.nfft" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        nfft
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.overlap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        overlap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.quiet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        quiet
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.scaling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        scaling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.torch_device" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        torch_device
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.win_dur" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        win_dur
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.win_length" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        win_length
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.window_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        window_type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._apply_freq_lims" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _apply_freq_lims
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._describe_window_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _describe_window_type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._resolve_clip_pad_seconds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _resolve_clip_pad_seconds
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._resolve_fft_params" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _resolve_fft_params
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._resolve_window" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _resolve_window
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._sanitize_metadata_for_mat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _sanitize_metadata_for_mat
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._torch_window_spec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _torch_window_spec
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.compute_spectrogram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        compute_spectrogram
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.load_audio" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_audio
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.plot_spectrogram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plot_spectrogram
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.process_directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        process_directory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.process_single_file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        process_single_file
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.save_matlab_format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save_matlab_format
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.save_numpy_format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save_numpy_format
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../onc_common/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ONC Common Helpers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SpectrogramGenerator
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        backend
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.clim" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clim
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.clip_end" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clip_end
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.clip_pad_seconds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clip_pad_seconds
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.clip_start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clip_start
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.colormap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        colormap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.crop_freq_lims" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        crop_freq_lims
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.freq_lims" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        freq_lims
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.hop_length" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        hop_length
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        log
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.log_freq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        log_freq
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.max_duration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        max_duration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.nfft" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        nfft
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.overlap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        overlap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.quiet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        quiet
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.scaling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        scaling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.torch_device" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        torch_device
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.win_dur" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        win_dur
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.win_length" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        win_length
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.window_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        window_type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._apply_freq_lims" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _apply_freq_lims
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._describe_window_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _describe_window_type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._resolve_clip_pad_seconds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _resolve_clip_pad_seconds
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._resolve_fft_params" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _resolve_fft_params
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._resolve_window" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _resolve_window
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._sanitize_metadata_for_mat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _sanitize_metadata_for_mat
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._torch_window_spec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _torch_window_spec
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.compute_spectrogram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        compute_spectrogram
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.load_audio" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_audio
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.plot_spectrogram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plot_spectrogram
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.process_directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        process_directory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.process_single_file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        process_single_file
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.save_matlab_format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save_matlab_format
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.save_numpy_format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save_numpy_format
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="spectrogramgenerator">SpectrogramGenerator<a class="headerlink" href="#spectrogramgenerator" title="Permanent link">&para;</a></h1>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator"></a>
+    <div class="doc doc-contents first">
+
+
+
+        <p>Generate spectrograms from audio files with configurable parameters.
+Based on MATLAB spectrogram computation with normalization and dB conversion.</p>
+
+        <p>Initialize spectrogram generator with parameters from MATLAB code.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>win_dur</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Window duration in seconds (controls FFT size: NFFT = win_dur * fs)</p>
+              </div>
+            </td>
+            <td>
+                  <code>1.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>overlap</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Overlap ratio between adjacent windows (0-1), higher = smoother time axis</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.5</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>window_type</code>
+            </td>
+            <td>
+                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, <span title="typing.Tuple">Tuple</span>[<span title="str">str</span>, <span title="float">float</span>], <span title="numpy.ndarray">ndarray</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Window function name/tuple for scipy.signal.get_window (e.g., 'hann', ('kaiser', 14))
+         Custom arrays or unsupported window types fall back to the SciPy backend.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;hann&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>nfft</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>FFT size in samples (None = derived from win_dur/sample_rate)</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>win_length</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Window length in samples (None = use nfft)</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>hop_length</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Step size in samples (None = derived from overlap ratio)</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>freq_lims</code>
+            </td>
+            <td>
+                  <code><span title="typing.Tuple">Tuple</span>[<span title="float">float</span>, <span title="float">float</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Frequency limits for plotting [Hz] (and cropping if crop_freq_lims=True)</p>
+              </div>
+            </td>
+            <td>
+                  <code>(10, 10000)</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>colormap</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Matplotlib colormap name</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;turbo&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>clim</code>
+            </td>
+            <td>
+                  <code><span title="typing.Tuple">Tuple</span>[<span title="float">float</span>, <span title="float">float</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Color axis limits [dB]</p>
+              </div>
+            </td>
+            <td>
+                  <code>(-60, 0)</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>log_freq</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to use logarithmic frequency scale</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>crop_freq_lims</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, crop saved outputs to freq_lims</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>max_duration</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="float">float</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maximum duration to process in seconds (None = full file)</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>clip_start</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="float">float</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional start time (seconds) to trim from beginning of audio</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>clip_end</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="float">float</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional end time (seconds) to stop processing; must be &gt; clip_start</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>clip_pad_seconds</code>
+            </td>
+            <td>
+                  <code><span title="typing.Union">Union</span>[<span title="float">float</span>, <span title="str">str</span>, None]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Extra context (seconds) to include on each side of the clip
+before the STFT; the spectrogram is trimmed back to the target window.
+Use 'auto' to pad by half the window length (helps reduce edge artifacts).</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;auto&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>backend</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>'auto' (default), 'torch', or 'scipy' backend for spectrogram computation</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;auto&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>torch_device</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Torch device for spectrogram computation ('cpu', 'cuda', or 'auto')</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;cpu&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>scaling</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>'density' (default) or 'spectrum' scaling for PSD normalization</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;density&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>quiet</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, suppress logger noise (only minimal prints for progress bar)</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>use_logging</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If False, fall back to stdout printing (avoids notebook logging friction)</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.backend" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">backend</span> <span class="o">=</span> <span class="n">backend</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.backend" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.clim" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">clim</span> <span class="o">=</span> <span class="n">clim</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.clim" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.clip_end" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">clip_end</span> <span class="o">=</span> <span class="n">clip_end</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.clip_end" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.clip_pad_seconds" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">clip_pad_seconds</span> <span class="o">=</span> <span class="n">clip_pad_seconds</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.clip_pad_seconds" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.clip_start" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">clip_start</span> <span class="o">=</span> <span class="n">clip_start</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.clip_start" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.colormap" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">colormap</span> <span class="o">=</span> <span class="n">colormap</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.colormap" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.crop_freq_lims" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">crop_freq_lims</span> <span class="o">=</span> <span class="n">crop_freq_lims</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.crop_freq_lims" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.freq_lims" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">freq_lims</span> <span class="o">=</span> <span class="n">freq_lims</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.freq_lims" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.hop_length" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">hop_length</span> <span class="o">=</span> <span class="n">hop_length</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.hop_length" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.log" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">log</span> <span class="o">=</span> <span class="n">logger</span> <span class="k">if</span> <span class="n">use_logging</span> <span class="k">else</span> <span class="n">PrintLogger</span><span class="p">()</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.log" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.log_freq" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">log_freq</span> <span class="o">=</span> <span class="n">log_freq</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.log_freq" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.max_duration" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">max_duration</span> <span class="o">=</span> <span class="n">max_duration</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.max_duration" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.nfft" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">nfft</span> <span class="o">=</span> <span class="n">nfft</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.nfft" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.overlap" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">overlap</span> <span class="o">=</span> <span class="n">overlap</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.overlap" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.quiet" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">quiet</span> <span class="o">=</span> <span class="n">quiet</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.quiet" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.scaling" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">scaling</span> <span class="o">=</span> <span class="n">scaling</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.scaling" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.torch_device" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">torch_device</span> <span class="o">=</span> <span class="n">torch_device</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.torch_device" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.win_dur" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">win_dur</span> <span class="o">=</span> <span class="n">win_dur</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.win_dur" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.win_length" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">win_length</span> <span class="o">=</span> <span class="n">win_length</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.win_length" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.window_type" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">window_type</span> <span class="o">=</span> <span class="n">window_type</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.window_type" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._apply_freq_lims" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">_apply_freq_lims</span><span class="p">(</span><span class="n">frequencies</span><span class="p">,</span> <span class="n">power_spectrogram</span><span class="p">,</span> <span class="n">power_db_norm</span><span class="p">)</span></code>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._apply_freq_lims" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._describe_window_type" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">_describe_window_type</span><span class="p">()</span></code>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._describe_window_type" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._resolve_clip_pad_seconds" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">_resolve_clip_pad_seconds</span><span class="p">(</span><span class="n">sample_rate</span><span class="p">)</span></code>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._resolve_clip_pad_seconds" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Resolve clip_pad_seconds, supporting an 'auto' mode.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._resolve_fft_params" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">_resolve_fft_params</span><span class="p">(</span><span class="n">sample_rate</span><span class="p">)</span></code>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._resolve_fft_params" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._resolve_window" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">_resolve_window</span><span class="p">(</span><span class="n">win_length</span><span class="p">)</span></code>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._resolve_window" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._sanitize_metadata_for_mat" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">_sanitize_metadata_for_mat</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._sanitize_metadata_for_mat" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._torch_window_spec" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">_torch_window_spec</span><span class="p">()</span></code>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator._torch_window_spec" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.compute_spectrogram" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">compute_spectrogram</span><span class="p">(</span><span class="n">audio_data</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">,</span> <span class="n">clip_meta</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.compute_spectrogram" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Compute spectrogram following MATLAB implementation.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>audio_data</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Audio signal</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>sample_rate</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Sample rate in Hz</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>clip_meta</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="dict">dict</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional clip metadata to trim spectrogram to target window</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Tuple">Tuple</span>[<span title="numpy.ndarray">ndarray</span>, <span title="numpy.ndarray">ndarray</span>, <span title="numpy.ndarray">ndarray</span>, <span title="numpy.ndarray">ndarray</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Tuple of (frequencies, times, power_spectrogram, normalized_db)</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.load_audio" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">load_audio</span><span class="p">(</span><span class="n">audio_path</span><span class="p">)</span></code>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.load_audio" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Load audio file supporting multiple formats.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>audio_path</code>
+            </td>
+            <td>
+                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, <span title="pathlib.Path">Path</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path to audio file</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Tuple">Tuple</span>[<span title="numpy.ndarray">ndarray</span>, <span title="int">int</span>, <span title="typing.Optional">Optional</span>[<span title="dict">dict</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Tuple of (audio_data, sample_rate, clip_meta)</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.plot_spectrogram" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">plot_spectrogram</span><span class="p">(</span><span class="n">frequencies</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">power_db_norm</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Spectrogram&#39;</span><span class="p">,</span> <span class="n">save_path</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.plot_spectrogram" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Plot spectrogram following MATLAB visualization.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>frequencies</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Frequency array</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>times</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Time array</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>power_db_norm</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Normalized power in dB</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>title</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Plot title</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;Spectrogram&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>save_path</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="typing.Union">Union</span>[<span title="str">str</span>, <span title="pathlib.Path">Path</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional path to save plot</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="matplotlib.pyplot.Figure">Figure</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>matplotlib Figure object</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.process_directory" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">process_directory</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">save_dir</span><span class="p">,</span> <span class="n">file_extensions</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;.wav&#39;</span><span class="p">,</span> <span class="s1">&#39;.flac&#39;</span><span class="p">,</span> <span class="s1">&#39;.mp3&#39;</span><span class="p">,</span> <span class="s1">&#39;.m4a&#39;</span><span class="p">],</span> <span class="n">save_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_mat</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_npy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.process_directory" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Process all audio files in a directory.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>input_dir</code>
+            </td>
+            <td>
+                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, <span title="pathlib.Path">Path</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Directory containing audio files.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>save_dir</code>
+            </td>
+            <td>
+                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, <span title="pathlib.Path">Path</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Directory to save outputs.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>file_extensions</code>
+            </td>
+            <td>
+                  <code><span title="typing.List">List</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Audio file extensions to include.</p>
+              </div>
+            </td>
+            <td>
+                  <code>[&#39;.wav&#39;, &#39;.flac&#39;, &#39;.mp3&#39;, &#39;.m4a&#39;]</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>save_plot</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Save PNG plots (default: True).</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>save_mat</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Save MATLAB <code>.mat</code> files (default: True).</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>save_npy</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Save NumPy <code>.npy</code> files (default: False).</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.List">List</span>[<span title="dict">dict</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of processing result dicts (one per file).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="FileNotFoundError">FileNotFoundError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the input directory does not exist.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.process_single_file" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">process_single_file</span><span class="p">(</span><span class="n">audio_path</span><span class="p">,</span> <span class="n">save_dir</span><span class="p">,</span> <span class="n">save_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_mat</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_npy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">extra_metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.process_single_file" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Process a single audio file and generate a spectrogram.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>audio_path</code>
+            </td>
+            <td>
+                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, <span title="pathlib.Path">Path</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path to the input audio file.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>save_dir</code>
+            </td>
+            <td>
+                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, <span title="pathlib.Path">Path</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Output directory for generated files.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>save_plot</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Save a PNG plot (default: True).</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>save_mat</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Save MATLAB <code>.mat</code> output (default: True).</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>save_npy</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Save NumPy <code>.npy</code> output (default: False). The payload
+is a dict with <code>F</code>, <code>T</code>, <code>P</code>, <code>PdB_norm</code>, and metadata.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>extra_metadata</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="dict">dict</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional extra metadata to store in outputs.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dict with file paths, arrays, and metadata. Keys include:</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>audio_file</code>, <code>frequencies</code>, <code>times</code>, <code>power_spectrogram</code>,</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>power_db_norm</code>, <code>sample_rate</code>, <code>duration</code>, <code>metadata</code>,</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>and any saved file paths (<code>mat_file</code>, <code>png_file</code>, <code>npy_file</code>).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="FileNotFoundError">FileNotFoundError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the audio file does not exist.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <pre><code class="language-python">generator = SpectrogramGenerator(win_dur=0.5, overlap=0.5)
+result = generator.process_single_file(
+    &quot;example.flac&quot;,
+    &quot;./out&quot;,
+    save_mat=True,
+    save_png=False,
+)
+print(result[&quot;mat_file&quot;])
+</code></pre>
+</details>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.save_matlab_format" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">save_matlab_format</span><span class="p">(</span><span class="n">frequencies</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">power_spectrogram</span><span class="p">,</span> <span class="n">power_db_norm</span><span class="p">,</span> <span class="n">save_path</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.save_matlab_format" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Save spectrogram data in MATLAB format.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>frequencies</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Frequency array</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>times</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Time array  </p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>power_spectrogram</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Raw power spectrogram</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>power_db_norm</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Normalized power in dB</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>save_path</code>
+            </td>
+            <td>
+                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, <span title="pathlib.Path">Path</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path to save .mat file</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.save_numpy_format" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">save_numpy_format</span><span class="p">(</span><span class="n">frequencies</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">power_spectrogram</span><span class="p">,</span> <span class="n">power_db_norm</span><span class="p">,</span> <span class="n">save_path</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#onc_hydrophone_data.audio.spectrogram_generator.SpectrogramGenerator.save_numpy_format" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Save spectrogram data in numpy format.</p>
+
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <p>This uses np.save with a dict payload (requires allow_pickle on load).
+Metadata is stored under the "metadata" key when provided.</p>
+</details>
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
