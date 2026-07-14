@@ -16,10 +16,11 @@ spectrograms with parameters you control.
 3. **[Download audio and make a spectrogram](quickstart.md)** — run one complete,
    copy-pasteable Python example and inspect the files it creates.
 
-![Example spectrogram generated locally from synthetic audio](assets/figures/example_local_spectrogram.webp){: width="100%" loading="lazy" }
+![Spectrogram of humpback whale calls recorded by an ONC hydrophone at Folger Passage](assets/figures/example_local_spectrogram.webp){: width="100%" loading="lazy" }
 
-*Illustrative output from this package. The figure uses synthetic audio so it
-does not represent an actual ONC observation.*
+*Generated locally by this package from a real ONC hydrophone recording:
+ICLISTENHF1205 at Folger Passage, 2012-08-01 12:24 UTC. Audio source and credit:
+[Ocean Networks Canada Multimedia Manager](https://ibase.oceannetworks.ca/view-item?i=9860).*
 
 ## Audio first, server products second
 
