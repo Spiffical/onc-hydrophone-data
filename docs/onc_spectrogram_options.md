@@ -11,6 +11,12 @@ its server-side options map to this package. ONC reports the options available
 for a particular device and format through its discovery API, so a device may
 offer only a subset of the values listed here.
 
+!!! tip "Most beginners should start with audio"
+    If your goal is to create spectrograms with your own settings, follow
+    **[Download Audio and Make a Spectrogram](quickstart.md)** instead. Use this
+    page when you specifically need ONC's server-generated or calibrated
+    spectral products.
+
 ## Quick chooser
 
 | Goal | ONC format and option | Retrieval and size | Notes |

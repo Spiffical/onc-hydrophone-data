@@ -13,19 +13,24 @@ theme:
     - navigation.tabs
     - navigation.sections
     - navigation.expand
+    - navigation.top
+    - navigation.footer
     - content.code.copy
 
 nav:
   - Home: index.md
-  - Quickstart: quickstart.md
-  - Workflows:
-      - Deployments & Inventory: inventory.md
-      - Downloads: downloads.md
-      - ONC Spectrogram Options: onc_spectrogram_options.md
-      - Custom Spectrograms: custom_spectrograms.md
+  - Start Here:
+      - 1. Install & Configure: setup.md
+      - 2. Find a Hydrophone: inventory.md
+      - 3. Audio to Spectrogram: quickstart.md
+  - How-to Guides:
+      - Download Audio: audio_downloads.md
+      - Generate Local Spectrograms: custom_spectrograms.md
+      - Advanced & Batch Downloads: downloads.md
+      - Choose ONC Server Spectrograms: onc_spectrogram_options.md
+      - Troubleshooting: troubleshooting.md
   - API Reference:
       - Overview: reference/index.md
-      - Legacy index: reference.md
       - HydrophoneDownloader: reference/downloader.md
       - Deployment Checker: reference/deployment_checker.md
       - Spectrogram Generator: reference/spectrogram_generator.md

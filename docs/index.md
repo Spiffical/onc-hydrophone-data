@@ -1,24 +1,55 @@
 # ONC Hydrophone Data
 
-This site is the user‑focused documentation for **onc-hydrophone-data**: a toolkit to download ONC hydrophone spectrograms/audio and generate custom spectrograms locally.
+Download hydrophone audio from Ocean Networks Canada (ONC), then turn it into
+spectrograms with parameters you control.
 
-## What you can do
-- Pull ONC spectrograms (MAT/PNG) for time ranges or sampled windows.
-- Download FLAC/WAV audio for matching ranges.
-- Run event‑based batches via JSON/CSV request files.
-- Generate local custom spectrograms from audio with your own FFT parameters.
+!!! tip "New to ONC hydrophones?"
+    Follow the three **Start Here** pages in order. They take you from an ONC
+    account to your first locally generated spectrogram.
 
-## Fast download model (ONC‑side parallelism)
-This package submits **multiple ONC data requests up front**, then polls and downloads results as they complete. ONC processes those requests in parallel on their servers, which is much faster than submitting one request at a time and waiting for each to finish.
+## The beginner path
 
-![Parallel ONC request pipeline](assets/parallel_pipeline.svg){: width="100%" }
+1. **[Install and configure](setup.md)** — install the package, save your ONC
+   token safely, and choose a data directory.
+2. **[Find a hydrophone](inventory.md)** — identify a device code and a date
+   range when that instrument was deployed and recording.
+3. **[Download audio and make a spectrogram](quickstart.md)** — run one complete,
+   copy-pasteable Python example and inspect the files it creates.
 
-## Recommended path
-1. **Quickstart** for a minimal “download + plot” flow.
-2. **Deployments & Inventory** to pick valid dates and devices.
-3. **Downloads** for the most common workflows.
-4. **ONC Spectrogram Options** to choose server resolution, collation, source,
-   channel, and diversion settings.
-5. **Custom Spectrograms** for local generation.
+![Example spectrogram generated locally from synthetic audio](assets/figures/example_local_spectrogram.webp){: width="100%" loading="lazy" }
 
-> If you prefer notebooks, see `notebooks/ONC_Data_Download_Tutorial.ipynb` in the repo.
+*Illustrative output from this package. The figure uses synthetic audio so it
+does not represent an actual ONC observation.*
+
+## Audio first, server products second
+
+Most users should download **FLAC/WAV audio** and create spectrograms locally.
+That path preserves the source audio and lets you change window length,
+frequency range, overlap, colour limits, and output format without requesting
+the data again.
+
+ONC also offers server-generated MAT, PNG, and PDF spectral products. Those are
+useful when you need calibrated ONC products, compact long-term summaries, or a
+quick visual scan. See **[Choose ONC Server Spectrograms](onc_spectrogram_options.md)**
+when that is your goal.
+
+## Choose the guide for your task
+
+| I want to… | Start with |
+| --- | --- |
+| Download a short audio range | [Download Audio](audio_downloads.md) |
+| Generate PNG/MAT spectrograms from audio | [Generate Local Spectrograms](custom_spectrograms.md) |
+| Check whether a device has data for my dates | [Find a Hydrophone](inventory.md) |
+| Sample many windows or download events from JSON/CSV | [Advanced & Batch Downloads](downloads.md) |
+| Understand ONC's one-minute, plot, or full-resolution products | [Choose ONC Server Spectrograms](onc_spectrogram_options.md) |
+| Fix a token, date-range, output-path, or backend problem | [Troubleshooting](troubleshooting.md) |
+
+## How ONC requests are handled
+
+For workflows that request server-generated products, the package submits
+multiple jobs up front, then polls and downloads results as ONC finishes them.
+
+![Parallel ONC request pipeline](assets/parallel_pipeline.svg){: width="100%" loading="lazy" }
+
+If you prefer notebooks, the repository also includes
+`notebooks/ONC_Data_Download_Tutorial.ipynb`.

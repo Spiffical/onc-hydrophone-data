@@ -1,4 +1,9 @@
-# Download Workflows
+# Advanced and Batch Download Workflows
+
+This page covers server-generated spectrograms, sampling, event batches, and
+JSON/CSV request files. If this is your first ONC download, start with
+**[Download Audio and Make a Spectrogram](quickstart.md)**. For ordinary audio
+ranges, see **[Download Audio](audio_downloads.md)**.
 
 For the differences between ONC's one-minute, plot-resolution, and
 full-resolution MAT products—plus concatenation, source, channel, diversion,
@@ -12,7 +17,7 @@ Options](onc_spectrogram_options.md).
 
 ![Parallel ONC request pipeline](assets/parallel_pipeline.svg){: width="100%" }
 
-## Range downloads (all spectrograms between two dates)
+## Server-generated spectrograms for a range
 ```python
 result = dl.download_spectrograms_for_range(
     device_code=DEVICE,
@@ -22,7 +27,7 @@ result = dl.download_spectrograms_for_range(
 )
 ```
 
-### Download matching audio
+### Include matching audio
 ```python
 result = dl.download_spectrograms_for_range(
     device_code=DEVICE,
@@ -33,7 +38,7 @@ result = dl.download_spectrograms_for_range(
 )
 ```
 
-## Sampling mode (uniform samples across a range)
+## Sample uniformly across a range
 ```python
 result = dl.download_sampled_spectrograms(
     device_code=DEVICE,
@@ -44,7 +49,7 @@ result = dl.download_sampled_spectrograms(
 )
 ```
 
-### Event‑based downloads (simple timestamps)
+## Download around event timestamps
 ```python
 events = [
     datetime(2024, 4, 1, 12, 5, tzinfo=timezone.utc),
@@ -57,17 +62,11 @@ result = dl.download_spectrograms_for_events(
 )
 ```
 
-## Event-based (timestamps)
-```python
-events = [datetime(2024, 4, 1, 12, 5, tzinfo=timezone.utc)]
-result = dl.download_spectrograms_for_events(
-    device_code=DEVICE,
-    event_times=events,
-    spectrograms_per_request=6,
-)
-```
-
 ## Audio-only range
+
+The focused **[Download Audio](audio_downloads.md)** guide explains output
+paths, resuming, formats, and long-range sampling. The minimal call is:
+
 ```python
 result = dl.download_audio_for_range(
     device_code=DEVICE,
@@ -165,6 +164,7 @@ results = dl.download_requests_from_json(
 ```
 
 ### Batch size guidance
+
 - 6–12 spectrograms per request is usually a good balance.
 - For large ranges, keep requests smaller to avoid timeouts.
 - For `dpo_spectralDataDownsample=0` or `2`, start with one to six five-minute
