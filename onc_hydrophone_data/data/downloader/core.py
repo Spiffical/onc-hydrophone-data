@@ -1,6 +1,7 @@
 import logging
 import os
 from threading import Lock
+from typing import Any
 
 from ..onc_requests import ONCRequestManager
 from ..deployment_checker import DeploymentChecker
@@ -35,13 +36,13 @@ class HydrophoneDownloader:
     """
     def __init__(
         self,
-        ONC_token,
-        parent_dir,
+        ONC_token: str,
+        parent_dir: str,
         use_logging: bool = True,
         *,
         spectral_downsample: int = 2,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         """Initialize the downloader.
 
         Args:
@@ -73,8 +74,6 @@ class HydrophoneDownloader:
         # 0 = full Res
         # 1 = one-minute average
         # 2 = plot resolution (default)
-        # 3 = 1 hour average
-        # 4 = 1 day average
         self.spectral_downsample = spectral_downsample
 
         # Clean flat structure paths (defaults)
@@ -96,7 +95,7 @@ class HydrophoneDownloader:
         self._cache_timestamp = None
 
     def set_spectral_downsample(self, value: int) -> None:
-        """Override default downsample option (0=fullRes, 1=one-minute, 2=plotRes, etc.)."""
+        """Override the default (0=full resolution, 1=one-minute, 2=plot resolution)."""
         self.spectral_downsample = value
 
 

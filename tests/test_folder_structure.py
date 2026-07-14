@@ -16,6 +16,8 @@ import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import pytest
+
 # Add parent to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
@@ -54,7 +56,7 @@ def verify_folder_structure(base_path: str, expected_folders: list) -> bool:
     return all_good
 
 
-def test_sampling_mode(downloader: HydrophoneDownloader, test_dir: str):
+def check_sampling_mode(downloader: HydrophoneDownloader, test_dir: str):
     """Test sampling schedule download mode."""
     print("\n" + "="*60)
     print_status("Testing SAMPLING MODE", "TEST")
@@ -105,7 +107,7 @@ def test_sampling_mode(downloader: HydrophoneDownloader, test_dir: str):
     return False
 
 
-def test_directory_setup(downloader: HydrophoneDownloader, test_dir: str):
+def check_directory_setup(downloader: HydrophoneDownloader, test_dir: str):
     """Test that setup_directories creates the correct structure."""
     print("\n" + "="*60)
     print_status("Testing DIRECTORY SETUP", "TEST")
@@ -153,7 +155,7 @@ def test_directory_setup(downloader: HydrophoneDownloader, test_dir: str):
         return False
 
 
-def test_legacy_compatibility(downloader: HydrophoneDownloader, test_dir: str):
+def check_legacy_compatibility(downloader: HydrophoneDownloader, test_dir: str):
     """Test that legacy attributes still work."""
     print("\n" + "="*60)
     print_status("Testing LEGACY COMPATIBILITY", "TEST")
@@ -189,6 +191,29 @@ def test_legacy_compatibility(downloader: HydrophoneDownloader, test_dir: str):
     return all(results)
 
 
+@pytest.fixture
+def test_dir(tmp_path: Path) -> str:
+    return str(tmp_path)
+
+
+@pytest.fixture
+def downloader(test_dir: str) -> HydrophoneDownloader:
+    return HydrophoneDownloader(os.getenv("ONC_TOKEN", "FAKE_TOKEN"), test_dir)
+
+
+@pytest.mark.integration
+def test_sampling_mode(downloader: HydrophoneDownloader, test_dir: str):
+    assert check_sampling_mode(downloader, test_dir)
+
+
+def test_directory_setup(downloader: HydrophoneDownloader, test_dir: str):
+    assert check_directory_setup(downloader, test_dir)
+
+
+def test_legacy_compatibility(downloader: HydrophoneDownloader, test_dir: str):
+    assert check_legacy_compatibility(downloader, test_dir)
+
+
 def main():
     print("\n" + "="*60)
     print("🧪 FOLDER STRUCTURE TESTS")
@@ -212,14 +237,14 @@ def main():
         results = []
         
         # Test 1: Directory setup
-        results.append(("Directory Setup", test_directory_setup(downloader, test_dir)))
+        results.append(("Directory Setup", check_directory_setup(downloader, test_dir)))
         
         # Test 2: Legacy compatibility
-        results.append(("Legacy Compatibility", test_legacy_compatibility(downloader, test_dir)))
+        results.append(("Legacy Compatibility", check_legacy_compatibility(downloader, test_dir)))
         
         # Test 3: Sampling mode (actual download - optional)
         if os.environ.get("RUN_DOWNLOAD_TESTS", "0") == "1":
-            results.append(("Sampling Mode Download", test_sampling_mode(downloader, test_dir)))
+            results.append(("Sampling Mode Download", check_sampling_mode(downloader, test_dir)))
         else:
             print_status("\nSkipping download tests (set RUN_DOWNLOAD_TESTS=1 to enable)", "WARN")
         

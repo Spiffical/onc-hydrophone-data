@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
+import pytest
 
 # Add parent directory to path for imports if running as script
 current_dir = Path(__file__).resolve().parent
@@ -19,6 +20,7 @@ from onc_hydrophone_data.audio.spectrogram_generator import SpectrogramGenerator
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+@pytest.mark.integration
 def test_real_download_and_spectrogram():
     """
     Integration test that actually downloads data from ONC and creates a spectrogram.
@@ -30,8 +32,7 @@ def test_real_download_and_spectrogram():
     onc_token = os.getenv('ONC_TOKEN')
     
     if not onc_token:
-        logger.error("ONC_TOKEN not found in environment variables. Please set it in .env file.")
-        sys.exit(1)
+        pytest.skip("ONC_TOKEN is required for the live ONC integration test")
         
     # Use a temporary directory or a specific test directory
     test_data_dir = parent_dir / "data" / "test_run"
@@ -76,9 +77,7 @@ def test_real_download_and_spectrogram():
                       list(Path(downloader.audio_path).glob("**/*.mp3"))
                       
         if not audio_files:
-            logger.error("No audio files were downloaded!")
-            logger.error(f"Checked path: {downloader.audio_path}")
-            sys.exit(1)
+            pytest.fail(f"No audio files were downloaded under {downloader.audio_path}")
             
         logger.info(f"Successfully downloaded {len(audio_files)} audio files.")
         for f in audio_files:
@@ -110,19 +109,16 @@ def test_real_download_and_spectrogram():
         generated_mats = list(spectrogram_output_dir.glob("*.mat"))
         
         if len(generated_pngs) == 0:
-            logger.error("No PNG spectrograms were generated!")
-            sys.exit(1)
+            pytest.fail("No PNG spectrograms were generated")
             
         if len(generated_mats) == 0:
-            logger.error("No MAT files were generated!")
-            sys.exit(1)
+            pytest.fail("No MAT files were generated")
 
         logger.info(f"Successfully generated {len(generated_pngs)} PNGs and {len(generated_mats)} MAT files.")
         logger.info(f"Test Run Complete! Output is in {test_data_dir}")
         
     except Exception as e:
-        logger.exception("Test failed with exception:")
-        sys.exit(1)
+        pytest.fail(f"Live download/spectrogram test failed: {e}")
 
 if __name__ == "__main__":
     test_real_download_and_spectrogram()

@@ -24,7 +24,16 @@ For development:
 ```bash
 git clone https://github.com/Spiffical/onc-hydrophone-data.git
 cd onc-hydrophone-data
-pip install -e .
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+pytest
+```
+
+Live ONC tests are opt-in because they make API requests and download data:
+
+```bash
+pytest -m integration
 ```
 
 ## ⚙️ Configuration
@@ -80,6 +89,10 @@ python scripts/download_hydrophone_data.py --mode sampling \
 
 # Generate custom spectrograms
 python scripts/generate_spectrograms.py --input-dir data/DEVICE/audio/ --win-dur 2.0
+
+# Save only the frequency range needed by the dashboard (much smaller MAT files)
+python scripts/generate_spectrograms.py --input-dir data/DEVICE/audio/ \
+    --freq-min 10 --freq-max 10000 --crop-freq-lims
 ```
 
 ### Deployment Availability Visualization
@@ -101,7 +114,7 @@ plot_availability_calendar(availability)
 
 - **Smart Sampling**: Intelligently distributes downloads across date ranges
 - **Parallel ONC Requests**: Submits many requests at once so ONC processes them in parallel, then downloads when ready (faster than sequential requests)
-- **Audio Downloads**: Download raw audio (FLAC/WAV) alongside spectrograms
+- **Resumable Audio Downloads**: Downloads FLAC/WAV files in parallel and skips files already present locally
 - **Custom Spectrograms**: Generate spectrograms with configurable parameters
 - **Deployment Validation**: Ensures data exists for requested time periods
 - **Deployment Availability Visuals**: Timeline/calendar views of data availability by device

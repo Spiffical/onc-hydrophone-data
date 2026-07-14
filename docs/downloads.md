@@ -1,5 +1,10 @@
 # Download Workflows
 
+For the differences between ONC's one-minute, plot-resolution, and
+full-resolution MAT products—plus concatenation, source, channel, diversion,
+PNG/PDF, and server-generation options—see [ONC Spectrogram Products and Server
+Options](onc_spectrogram_options.md).
+
 !!! note
     The downloader submits multiple ONC requests **in parallel** and then
     downloads results as they become ready. ONC handles the parallel processing
@@ -162,3 +167,5 @@ results = dl.download_requests_from_json(
 ### Batch size guidance
 - 6–12 spectrograms per request is usually a good balance.
 - For large ranges, keep requests smaller to avoid timeouts.
+- For `dpo_spectralDataDownsample=0` or `2`, start with one to six five-minute
+  windows because ONC generates these products on demand.
