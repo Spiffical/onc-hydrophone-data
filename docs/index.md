@@ -17,6 +17,8 @@ This package submits **multiple ONC data requests up front**, then polls and dow
 1. **Quickstart** for a minimal “download + plot” flow.
 2. **Deployments & Inventory** to pick valid dates and devices.
 3. **Downloads** for the most common workflows.
-4. **Custom Spectrograms** for local generation.
+4. **ONC Spectrogram Options** to choose server resolution, collation, source,
+   channel, and diversion settings.
+5. **Custom Spectrograms** for local generation.
 
 > If you prefer notebooks, see `notebooks/ONC_Data_Download_Tutorial.ipynb` in the repo.

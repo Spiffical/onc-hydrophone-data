@@ -21,9 +21,11 @@ nav:
   - Workflows:
       - Deployments & Inventory: inventory.md
       - Downloads: downloads.md
+      - ONC Spectrogram Options: onc_spectrogram_options.md
       - Custom Spectrograms: custom_spectrograms.md
   - API Reference:
       - Overview: reference/index.md
+      - Legacy index: reference.md
       - HydrophoneDownloader: reference/downloader.md
       - Deployment Checker: reference/deployment_checker.md
       - Spectrogram Generator: reference/spectrogram_generator.md

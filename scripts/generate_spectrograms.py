@@ -40,7 +40,6 @@ import logging
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from onc_hydrophone_data.audio import SpectrogramGenerator, find_audio_files, get_audio_info, estimate_processing_time
-from onc_hydrophone_data.data.config_utils import DatasetConfig
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -208,7 +207,7 @@ def _prompt_optional_int(prompt: str) -> Optional[int]:
 def _prompt_yes_no(prompt: str, default: bool) -> bool:
     suffix = " [Y/n]" if default else " [y/N]"
     while True:
-        value = input(f\"{prompt}{suffix}: \").strip().lower()
+        value = input(f"{prompt}{suffix}: ").strip().lower()
         if not value:
             return default
         if value in {'y', 'yes'}:
@@ -298,6 +297,11 @@ def prompt_for_parameters() -> dict:
         except ValueError:
             print_status("Please enter a valid number", "ERROR")
 
+    params['crop_freq_lims'] = _prompt_yes_no(
+        "Crop saved arrays to this frequency range?",
+        default=False,
+    )
+
     colormap_input = input("Colormap [default: turbo]: ").strip()
     params['colormap'] = colormap_input or 'turbo'
 
@@ -357,6 +361,9 @@ def prompt_for_parameters() -> dict:
 
     params['quiet'] = _prompt_yes_no("Quiet mode (reduced logging)?", default=False)
     params['use_logging'] = _prompt_yes_no("Use logging module?", default=True)
+    params['max_workers'] = _prompt_optional_int(
+        "Parallel file workers [default: auto, max 4]: "
+    )
     
     # Output format
     print("\nOutput format options:")
@@ -413,7 +420,8 @@ def determine_output_directory(input_path: str, is_directory: bool, output_dir: 
     return output_path
 
 def process_audio_files(input_path: str, output_dir: str, is_directory: bool, 
-                       generator: SpectrogramGenerator, save_mat: bool, save_plot: bool) -> dict:
+                       generator: SpectrogramGenerator, save_mat: bool, save_plot: bool,
+                       max_workers: Optional[int] = None) -> dict:
     """
     Process audio files and generate spectrograms.
     """
@@ -435,7 +443,13 @@ def process_audio_files(input_path: str, output_dir: str, is_directory: bool,
             print_status(f"Estimated processing time: {estimated_time:.1f} seconds", "INFO")
         
         # Process all files
-        results = generator.process_directory(input_path, output_dir, save_mat=save_mat, save_plot=save_plot)
+        results = generator.process_directory(
+            input_path,
+            output_dir,
+            save_mat=save_mat,
+            save_plot=save_plot,
+            max_workers=max_workers,
+        )
         
     else:
         # Single file
@@ -552,6 +566,15 @@ Examples:
                        type=float, 
                        default=10000,
                        help='Maximum frequency for plots in Hz (default: 10000)')
+
+    parser.add_argument('--crop-freq-lims',
+                       action='store_true',
+                       help='Crop saved MAT/NumPy arrays to --freq-min/--freq-max (reduces time, RAM, and disk)')
+
+    parser.add_argument('--max-workers',
+                       type=int,
+                       default=None,
+                       help='Parallel file workers (default: auto, capped at 4)')
     
     # Output format options
     parser.add_argument('--no-plots', 
@@ -652,6 +675,7 @@ Examples:
                 'win_length': args.win_length,
                 'hop_length': args.hop_length,
                 'freq_lims': (args.freq_min, args.freq_max),
+                'crop_freq_lims': args.crop_freq_lims,
                 'colormap': args.colormap,
                 'clim': (args.clim_min, args.clim_max),
                 'log_freq': args.log_freq,
@@ -677,6 +701,7 @@ Examples:
                 'win_length': params['win_length'],
                 'hop_length': params['hop_length'],
                 'freq_lims': (params['freq_min'], params['freq_max']),
+                'crop_freq_lims': params['crop_freq_lims'],
                 'colormap': params['colormap'],
                 'clim': (params['clim_min'], params['clim_max']),
                 'log_freq': params['log_freq'],
@@ -699,7 +724,8 @@ Examples:
         
         summary = process_audio_files(
             input_path, output_dir, is_directory, 
-            generator, save_mat, save_plot
+            generator, save_mat, save_plot,
+            max_workers=args.max_workers if (args.input_dir or args.input_file) else params['max_workers'],
         )
         
         processing_time = time.time() - start_time

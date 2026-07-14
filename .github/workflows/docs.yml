@@ -29,5 +29,8 @@ jobs:
           pip install -r requirements-docs.txt
           pip install -e .
 
+      - name: Validate docs
+        run: mkdocs build --strict
+
       - name: Deploy docs
         run: mkdocs gh-deploy --force

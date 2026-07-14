@@ -189,7 +189,8 @@ def run_parallel_windows(
     download_audio: Optional[bool] = None,
     download_flac: Optional[bool] = None,
     audio_download_workers: Optional[int] = None,
-    stagger_seconds: float = 3.0,
+    stagger_seconds: float = 0.0,
+    max_submit_workers: Optional[int] = None,
     max_wait_minutes: int = 45,
     poll_interval_seconds: int = 30,
     max_attempts: int = 6,
@@ -213,12 +214,8 @@ def run_parallel_windows(
     print(f"Submitting {total_windows} requests for {device_code}...")
 
     wall_start = time.time()
-    run_records: List[Dict[str, Any]] = []
-    for i, (start_dt, end_dt) in enumerate(ordered_windows, 1):
-        if i % 5 == 1 or i == total_windows:
-             print(f"Submitting request {i}/{total_windows}...")
-        
-        rec = self.request_manager.submit_mat_run_no_wait(
+    def submit_window(start_dt: datetime, end_dt: datetime) -> Dict[str, Any]:
+        return self.request_manager.submit_mat_run_no_wait(
             device_code=device_code,
             start_dt=start_dt,
             end_dt=end_dt,
@@ -226,9 +223,33 @@ def run_parallel_windows(
             spectrograms_per_batch=spectrograms_per_request,
             data_product_options=data_product_options,
         )
-        run_records.append(rec)
-        if stagger_seconds > 0 and i < total_windows:
-            time.sleep(stagger_seconds)
+
+    run_records: List[Dict[str, Any]] = []
+    if stagger_seconds > 0:
+        # Explicit pacing is useful if ONC asks clients to throttle submissions.
+        for i, (start_dt, end_dt) in enumerate(ordered_windows, 1):
+            if i % 5 == 1 or i == total_windows:
+                print(f"Submitting request {i}/{total_windows}...")
+            run_records.append(submit_window(start_dt, end_dt))
+            if i < total_windows:
+                time.sleep(stagger_seconds)
+    else:
+        submit_workers = max_submit_workers or self.max_workers or 1
+        submit_workers = max(1, min(int(submit_workers), total_windows))
+        ordered_records: List[Optional[Dict[str, Any]]] = [None] * total_windows
+        with concurrent.futures.ThreadPoolExecutor(max_workers=submit_workers) as executor:
+            future_map = {
+                executor.submit(submit_window, start_dt, end_dt): index
+                for index, (start_dt, end_dt) in enumerate(ordered_windows)
+            }
+            completed = 0
+            for future in concurrent.futures.as_completed(future_map):
+                index = future_map[future]
+                ordered_records[index] = future.result()
+                completed += 1
+                if completed % 5 == 0 or completed == total_windows:
+                    print(f"Submitted request {completed}/{total_windows}...")
+        run_records = [record for record in ordered_records if record is not None]
 
     def replace_record(updated: Dict[str, Any]) -> None:
         for idx, existing in enumerate(run_records):

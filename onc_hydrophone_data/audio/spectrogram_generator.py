@@ -49,6 +49,17 @@ except ImportError:
 # Thread lock for matplotlib operations (shared across instances)
 _plot_lock = threading.Lock()
 
+
+@lru_cache(maxsize=32)
+def _cached_scipy_window(window_type: Union[str, Tuple[str, float]], win_length: int) -> np.ndarray:
+    """Build immutable, reusable FFT windows for the common hashable specs."""
+    window = np.asarray(
+        scipy.signal.get_window(window_type, win_length, fftbins=True),
+        dtype=np.float32,
+    )
+    window.setflags(write=False)
+    return window
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -136,6 +147,8 @@ class SpectrogramGenerator:
         self.scaling = scaling
         self.quiet = quiet
         self.log = logger if use_logging else PrintLogger()
+        self._torch_transform_cache = {}
+        self._cache_lock = threading.Lock()
         
     def load_audio(self, audio_path: Union[str, Path]) -> Tuple[np.ndarray, int, Optional[dict]]:
         """
@@ -330,10 +343,50 @@ class SpectrogramGenerator:
         elif not isinstance(window_type, str) and not is_window_spec:
             window = np.asarray(window_type)
         else:
-            window = scipy.signal.get_window(window_type, win_length, fftbins=True)
+            window = _cached_scipy_window(window_type, win_length)
         if len(window) != win_length:
             raise ValueError(f"Window length mismatch: expected {win_length}, got {len(window)}")
         return np.asarray(window, dtype=np.float32)
+
+    def _get_torch_spectrogram_transform(
+        self,
+        *,
+        nfft: int,
+        win_length: int,
+        hop_length: int,
+        device: str,
+        torch_window: Tuple[Any, dict],
+    ):
+        """Return a cached, stateless torchaudio transform."""
+        window_fn, wkwargs = torch_window
+        cache_key = (
+            nfft,
+            win_length,
+            hop_length,
+            str(device),
+            getattr(window_fn, '__name__', repr(window_fn)),
+            tuple(sorted(wkwargs.items())),
+        )
+        transform = self._torch_transform_cache.get(cache_key)
+        if transform is not None:
+            return transform
+
+        with self._cache_lock:
+            transform = self._torch_transform_cache.get(cache_key)
+            if transform is None:
+                transform = torchaudio.transforms.Spectrogram(
+                    n_fft=nfft,
+                    win_length=win_length,
+                    hop_length=hop_length,
+                    power=2.0,
+                    center=False,
+                    pad=0,
+                    normalized=False,
+                    window_fn=window_fn,
+                    wkwargs=wkwargs,
+                ).to(device)
+                self._torch_transform_cache[cache_key] = transform
+        return transform
 
     def _torch_window_spec(self) -> Optional[Tuple[Any, dict]]:
         if isinstance(self.window_type, np.ndarray):
@@ -438,18 +491,13 @@ class SpectrogramGenerator:
 
         if use_torch_backend:
             try:
-                window_fn, wkwargs = torch_window
-                spec_transform = torchaudio.transforms.Spectrogram(
-                    n_fft=nfft,
+                spec_transform = self._get_torch_spectrogram_transform(
+                    nfft=nfft,
                     win_length=win_length,
                     hop_length=hop_length,
-                    power=2.0, # Power spectrogram (|STFT|^2)
-                    center=False,
-                    pad=0,
-                    normalized=False,
-                    window_fn=window_fn,
-                    wkwargs=wkwargs,
-                ).to(device)
+                    device=device,
+                    torch_window=torch_window,
+                )
                 
                 # Prepare data
                 audio_t = torch.from_numpy(audio_data.astype(np.float32, copy=False)).to(device)
@@ -457,15 +505,25 @@ class SpectrogramGenerator:
                 # Compute
                 spec = spec_transform(audio_t)
                 spec *= scale
+
+                # Match scipy.signal.spectrogram's one-sided PSD convention.
+                # Interior bins represent both positive and negative frequencies.
+                if nfft % 2 == 0:
+                    spec[1:-1] *= 2.0
+                else:
+                    spec[1:] *= 2.0
                 
-                if device == 'cuda':
+                if str(device).startswith('cuda'):
                     spec = spec.cpu()
                 
                 Sxx = spec.numpy()
                 
                 # Construct axes
                 frequencies = np.linspace(0, sample_rate/2, Sxx.shape[0])
-                times = np.arange(Sxx.shape[1]) * (hop_length / sample_rate)
+                # Report window centres, matching SciPy/MATLAB rather than frame starts.
+                times = (
+                    np.arange(Sxx.shape[1]) * hop_length + (win_length / 2.0)
+                ) / sample_rate
                 
             except Exception as e:
                 self.log.warning(f"Torchaudio computation failed, falling back to Scipy: {e}")
@@ -481,7 +539,8 @@ class SpectrogramGenerator:
                 noverlap=noverlap,
                 nfft=nfft,
                 scaling=scaling,  # Power spectral density
-                mode='psd'
+                mode='psd',
+                detrend=False,
             )
         
         backend_used = 'torch' if use_torch_backend else 'scipy'
@@ -490,12 +549,14 @@ class SpectrogramGenerator:
         self._last_device = device if backend_used == 'torch' else None
 
         # Normalize and convert to dB (following MATLAB: 10*log10(abs(P./max(P,[],'all'))))
-        max_power = np.max(np.abs(Sxx))
+        max_power = np.max(Sxx)
         if max_power > 0:
-            normalized_power = np.abs(Sxx) / max_power
-            # Avoid log(0) by setting minimum value
-            normalized_power = np.maximum(normalized_power, 1e-10)
-            power_db_norm = 10 * np.log10(normalized_power)
+            # Reuse one working array rather than allocating abs(), division,
+            # clipping, log, and multiplication intermediates.
+            power_db_norm = np.asarray(Sxx / max_power)
+            np.maximum(power_db_norm, 1e-10, out=power_db_norm)
+            np.log10(power_db_norm, out=power_db_norm)
+            power_db_norm *= 10.0
         else:
             power_db_norm = np.full_like(Sxx, -100.0)  # Very low dB value
         
@@ -536,11 +597,9 @@ class SpectrogramGenerator:
         with _plot_lock:
             fig, ax = plt.subplots(figsize=(12, 8))
             
-            # Create meshgrid for pcolor
-            T, F = np.meshgrid(times, frequencies)
-            
-            # Plot spectrogram using pcolormesh (much faster than pcolor)
-            pcm = ax.pcolormesh(T, F, power_db_norm, 
+            # pcolormesh accepts 1-D axes directly; avoiding meshgrid saves two
+            # full-size temporary arrays for large hydrophone spectrograms.
+            pcm = ax.pcolormesh(times, frequencies, power_db_norm,
                            cmap=self.colormap, 
                            shading='auto',
                            vmin=self.clim[0], 
@@ -566,7 +625,7 @@ class SpectrogramGenerator:
             if save_path:
                 save_path = Path(save_path)
                 save_path.parent.mkdir(parents=True, exist_ok=True)
-                plt.savefig(save_path, dpi=300, bbox_inches='tight')
+                fig.savefig(save_path, dpi=300, bbox_inches='tight')
             if not self.quiet:
                 self.log.info(f"Spectrogram plot saved: {save_path}")
         
@@ -608,7 +667,8 @@ class SpectrogramGenerator:
                            save_plot: bool = True,
                            save_mat: bool = True,
                            save_npy: bool = False,
-                           extra_metadata: Optional[dict] = None) -> dict:
+                           extra_metadata: Optional[dict] = None,
+                           retain_arrays: bool = True) -> dict:
         """Process a single audio file and generate a spectrogram.
 
         Args:
@@ -619,6 +679,8 @@ class SpectrogramGenerator:
             save_npy: Save NumPy ``.npy`` output (default: False). The payload
                 is a dict with ``F``, ``T``, ``P``, ``PdB_norm``, and metadata.
             extra_metadata: Optional extra metadata to store in outputs.
+            retain_arrays: Keep full spectrogram arrays in the returned dict.
+                Disable this for batch jobs to release memory after each file.
 
         Returns:
             Dict with file paths, arrays, and metadata. Keys include:
@@ -732,6 +794,10 @@ class SpectrogramGenerator:
                                        save_path=png_path)
             plt.close(fig)  # Close to free memory
             results['png_file'] = str(png_path)
+
+        if not retain_arrays:
+            for key in ('frequencies', 'times', 'power_spectrogram', 'power_db_norm'):
+                results.pop(key, None)
         
         return results
 
@@ -767,10 +833,12 @@ class SpectrogramGenerator:
     
     def process_directory(self, input_dir: Union[str, Path], 
                          save_dir: Union[str, Path],
-                         file_extensions: List[str] = ['.wav', '.flac', '.mp3', '.m4a'],
+                         file_extensions: Optional[List[str]] = None,
                          save_plot: bool = True,
                          save_mat: bool = True,
-                         save_npy: bool = False) -> List[dict]:
+                         save_npy: bool = False,
+                         max_workers: Optional[int] = None,
+                         retain_arrays: bool = False) -> List[dict]:
         """Process all audio files in a directory.
 
         Args:
@@ -780,6 +848,10 @@ class SpectrogramGenerator:
             save_plot: Save PNG plots (default: True).
             save_mat: Save MATLAB ``.mat`` files (default: True).
             save_npy: Save NumPy ``.npy`` files (default: False).
+            max_workers: Batch worker count. Defaults to at most four to limit
+                peak memory; raise it explicitly for many short files.
+            retain_arrays: Keep full arrays in each result. Defaults to False
+                so long batch jobs do not retain every spectrogram in memory.
 
         Returns:
             List of processing result dicts (one per file).
@@ -794,11 +866,13 @@ class SpectrogramGenerator:
             raise FileNotFoundError(f"Input directory not found: {input_dir}")
         
         # Find all audio files
+        file_extensions = file_extensions or ['.wav', '.flac', '.mp3', '.m4a']
         audio_files = []
         for ext in file_extensions:
             audio_files.extend(input_dir.glob(f"*{ext}"))
             audio_files.extend(input_dir.glob(f"*{ext.upper()}"))
         
+        audio_files = sorted(set(audio_files))
         if not audio_files:
             logger.warning(f"No audio files found in {input_dir} with extensions {file_extensions}")
             return []
@@ -806,38 +880,52 @@ class SpectrogramGenerator:
         if not self.quiet:
             self.log.info(f"Processing {len(audio_files)} audio files from {input_dir}")
         
-        results = []
-        max_workers = min(8, os.cpu_count() or 4)
+        indexed_results = [None] * len(audio_files)
+        if max_workers is None:
+            # Four workers are within a few percent of eight for Torch on a
+            # typical Apple Silicon Mac while roughly halving worst-case RAM.
+            max_workers = min(4, os.cpu_count() or 4, len(audio_files))
+        else:
+            max_workers = max(1, min(int(max_workers), len(audio_files)))
         total = len(audio_files)
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_file = {
-                executor.submit(self.process_single_file, audio_file, save_dir, save_plot, save_mat, save_npy): audio_file
-                for audio_file in audio_files
+                executor.submit(
+                    self.process_single_file,
+                    audio_file,
+                    save_dir,
+                    save_plot=save_plot,
+                    save_mat=save_mat,
+                    save_npy=save_npy,
+                    retain_arrays=retain_arrays,
+                ): (index, audio_file)
+                for index, audio_file in enumerate(audio_files)
             }
             completed = 0
             for future in as_completed(future_to_file):
-                audio_file = future_to_file[future]
+                index, audio_file = future_to_file[future]
                 completed += 1
                 try:
                     result = future.result()
-                    results.append(result)
+                    indexed_results[index] = result
                     if not self.quiet:
                         self.log.info(f"Processed {completed}/{total}: {audio_file.name}")
                 except Exception as e:
                     if not self.quiet:
                         self.log.error(f"Error processing {audio_file}: {e}")
-                    results.append({
+                    indexed_results[index] = {
                         'audio_file': str(audio_file),
                         'error': str(e)
-                    })
-                # Lightweight progress bar to stdout
-                bar_len = 20
-                filled = int(bar_len * completed / total)
-                bar = '#' * filled + '-' * (bar_len - filled)
-                sys.stdout.write(f"\rSpectrograms: [{bar}] {completed}/{total}")
-                sys.stdout.flush()
-            sys.stdout.write("\n")
+                    }
+                if not self.quiet:
+                    bar_len = 20
+                    filled = int(bar_len * completed / total)
+                    bar = '#' * filled + '-' * (bar_len - filled)
+                    sys.stdout.write(f"\rSpectrograms: [{bar}] {completed}/{total}")
+                    sys.stdout.flush()
+            if not self.quiet:
+                sys.stdout.write("\n")
         
         if not self.quiet:
-            self.log.info(f"Completed processing {len(results)} files")
-        return results 
+            self.log.info(f"Completed processing {len(indexed_results)} files")
+        return indexed_results

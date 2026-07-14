@@ -153,6 +153,7 @@ def download_audio_files(
     extensions: Sequence[str] = ('flac', 'wav'),
     max_download_workers: Optional[int] = None,
     onc_client=None,
+    overwrite: bool = False,
 ):
     """Download audio files for the requested time window.
 
@@ -165,6 +166,8 @@ def download_audio_files(
         extensions: Audio extensions to try in order.
         max_download_workers: Override parallel download workers.
         onc_client: Optional ONC client instance (used for thread safety).
+        overwrite: Re-download files that already exist locally. Defaults to
+            False so rerunning a request resumes instead of wasting bandwidth.
 
     Returns:
         Summary dict with files found/downloaded and extension used.
@@ -190,6 +193,7 @@ def download_audio_files(
         'extension_used': None,
         'files_found': 0,
         'files_downloaded': 0,
+        'files_skipped': 0,
         'errors': 0,
     }
 
@@ -222,12 +226,27 @@ def download_audio_files(
             self.logger.info(f'Found {len(audio_files)} {extension.upper()} file(s)')
 
             download_start = time.time()
-            pending = set(audio_files)
+            existing_files = set()
+            if not overwrite:
+                existing_files = {
+                    audio_file
+                    for audio_file in audio_files
+                    if (
+                        os.path.isfile(os.path.join(self.audio_path, os.path.basename(audio_file)))
+                        and os.path.getsize(os.path.join(self.audio_path, os.path.basename(audio_file))) > 0
+                    )
+                }
+            pending = set(audio_files) - existing_files
             attempts = {f: 0 for f in audio_files}
             max_attempts = 6
             attempt_round = 0
-            downloaded = 0
+            downloaded = len(existing_files)
             errors = 0
+
+            if existing_files:
+                self.logger.info(
+                    f"Skipping {len(existing_files)} existing {extension.upper()} file(s)"
+                )
 
             while pending:
                 attempt_round += 1
@@ -243,7 +262,7 @@ def download_audio_files(
                 if max_workers > 1 and len(pending_list) > 1:
                     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                         future_map = {
-                            executor.submit(client.getFile, f, overwrite=True): f for f in pending_list
+                            executor.submit(client.getFile, f, overwrite=overwrite): f for f in pending_list
                         }
                         for future in concurrent.futures.as_completed(future_map):
                             audio_file = future_map[future]
@@ -264,7 +283,7 @@ def download_audio_files(
                 else:
                     for audio_file in pending_list:
                         try:
-                            client.getFile(audio_file, overwrite=True)
+                            client.getFile(audio_file, overwrite=overwrite)
                             downloaded += 1
                         except Exception as e:
                             if attempts[audio_file] >= max_attempts:
@@ -288,6 +307,7 @@ def download_audio_files(
             summary.update({
                 'extension_used': extension if downloaded else None,
                 'files_downloaded': downloaded,
+                'files_skipped': len(existing_files),
                 'errors': errors,
             })
             if downloaded:
@@ -313,6 +333,7 @@ def download_flac_files(
     end_time,
     onc_client=None,
     max_download_workers: Optional[int] = None,
+    overwrite: bool = False,
 ):
     """Backwards-compatible wrapper for audio downloads (FLAC with WAV fallback).
 
@@ -322,6 +343,7 @@ def download_flac_files(
         end_time: ISO end timestamp (UTC).
         onc_client: Optional ONC client instance.
         max_download_workers: Override parallel download workers.
+        overwrite: Re-download files that already exist locally.
     """
     return self.download_audio_files(
         deviceCode,
@@ -330,4 +352,5 @@ def download_flac_files(
         extensions=('flac', 'wav'),
         max_download_workers=max_download_workers,
         onc_client=onc_client,
+        overwrite=overwrite,
     )

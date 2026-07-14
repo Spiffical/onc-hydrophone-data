@@ -8,7 +8,8 @@ from onc_hydrophone_data.onc.common import ensure_timezone_aware, format_iso_utc
 
 
 DEFAULT_PARALLEL_CONFIG = {
-    'stagger_seconds': 3.0,
+    'stagger_seconds': 0.0,
+    'max_submit_workers': 4,
     'max_wait_minutes': 45,
     'poll_interval_seconds': 30,
     'max_download_workers': 4,

@@ -35,3 +35,8 @@ output/
 dist/
 build/
 *.egg-info/
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/

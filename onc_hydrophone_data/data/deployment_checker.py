@@ -385,7 +385,7 @@ class HydrophoneDeploymentChecker:
         *,
         view: str = 'current',
         max_rows: Optional[int] = 50,
-    ):
+    ) -> Any:
         """
         Render the inventory into a table (DataFrame if pandas is available).
 
@@ -472,7 +472,7 @@ class HydrophoneDeploymentChecker:
         *,
         view: str = 'current',
         max_rows: Optional[int] = 50,
-    ):
+    ) -> Any:
         """
         Display the inventory table in notebooks or print a Markdown fallback.
 
@@ -540,7 +540,7 @@ class HydrophoneDeploymentChecker:
         device_ids: Optional[List[Union[str, int]]] = None,
         max_rows: Optional[int] = 50,
         inventory: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> Any:
         """
         Show deployment history for specific device codes or device IDs.
 
@@ -810,7 +810,7 @@ class HydrophoneDeploymentChecker:
         max_days_per_request: int = 60,
         style: str = 'timeline',
         **plot_kwargs: Any,
-    ):
+    ) -> Any:
         """
         Plot availability for a device using timeline or calendar styles.
 
