@@ -398,9 +398,15 @@ def plot_deployment_availability_timeline(
         Patch(facecolor=missing_color, label="No data"),
         Patch(facecolor=deployment_color, label="Deployment window"),
     ]
-    ax.legend(handles=legend_items, loc='upper right', frameon=False)
+    fig.legend(
+        handles=legend_items,
+        loc='lower center',
+        bbox_to_anchor=(0.5, 0.02),
+        ncol=3,
+        frameon=False,
+    )
 
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.18, 1, 1))
     if show:
         plt.show()
     return fig, ax
@@ -508,7 +514,13 @@ def plot_availability_calendar(
         Patch(facecolor=missing_color, label="No data"),
         Patch(facecolor=not_deployed_color, label="Not deployed"),
     ]
-    ax.legend(handles=legend_items, loc='upper right', frameon=False)
+    fig.legend(
+        handles=legend_items,
+        loc='lower center',
+        bbox_to_anchor=(0.5, 0.02),
+        ncol=2,
+        frameon=False,
+    )
 
     if title is None:
         device_code = availability.get('device_code', 'device')
@@ -520,7 +532,7 @@ def plot_availability_calendar(
     for spine in ax.spines.values():
         spine.set_visible(False)
 
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.2, 1, 1))
     if show:
         plt.show()
     return fig, ax

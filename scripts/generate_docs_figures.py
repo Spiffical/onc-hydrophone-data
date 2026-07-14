@@ -1,35 +1,53 @@
 #!/usr/bin/env python3
-"""Generate deterministic, illustrative figures used by the MkDocs site.
-
-The figures intentionally use synthetic data. They demonstrate the package's
-plotting output without requiring an ONC token or presenting simulated values
-as real hydrophone observations.
-"""
+"""Generate figures used by the MkDocs site from real ONC records and audio."""
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+import argparse
+from datetime import datetime
 from pathlib import Path
+import shutil
+import tempfile
+from urllib.request import Request, urlopen
 
 import matplotlib
 
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
-import numpy as np
+import matplotlib.dates as mdates
+from matplotlib.patches import Patch
 from PIL import Image
-from scipy.signal import chirp
 
 from onc_hydrophone_data.audio import SpectrogramGenerator
-from onc_hydrophone_data.data.deployment_checker import DeploymentInfo
-from onc_hydrophone_data.utils import (
-    plot_availability_calendar,
-    plot_deployment_availability_timeline,
-)
 
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = ROOT / "docs" / "assets" / "figures"
+ONC_AUDIO_URL = (
+    "https://ibase.oceannetworks.ca/media.php?i=9860&t=4&p=8"
+    "&dg=7d61cb4a58b0b01cefa32614d1e047b94914327f"
+)
+ONC_INVENTORY_SOURCE = (
+    "https://wiki.oceannetworks.ca/pages/viewpage.action?pageId=72548654"
+)
+ONC_INVENTORY_SNAPSHOT = datetime(2026, 7, 14)
+
+CURRENT_ENDEAVOUR_ARRAY = [
+    ("ICLISTENHF6324", "KEMFH.H1 (A)", "2023-09-08 22:56", "2,195 m"),
+    ("ICLISTENHF6327", "KEMFH.H2 (B)", "2023-09-08 22:56", "2,195 m"),
+    ("ICLISTENHF6328", "KEMFH.H3 (C)", "2023-09-08 22:56", "2,195 m"),
+    ("ICLISTENHF6329", "KEMFH.H4 (D)", "2023-09-08 22:56", "2,195 m"),
+]
+
+ENDEAVOUR_DEPLOYMENT_HISTORY = [
+    ("ICLISTENHF1561", "KEMF", "2018-07-25T18:03:48", "2020-10-03T02:53:21", False),
+    ("ICLISTENHF1950", "KEMF", "2020-06-11T16:25:38", "2023-09-08T23:57:03", False),
+    ("ICLISTENHF6324", "KEMFH.H1", "2023-09-08T22:56:13", None, True),
+    ("ICLISTENHF6327", "KEMFH.H2", "2023-09-08T22:56:13", None, True),
+    ("ICLISTENHF6328", "KEMFH.H3", "2023-09-08T22:56:13", None, True),
+    ("ICLISTENHF6329", "KEMFH.H4", "2023-09-08T22:56:13", None, True),
+]
 
 
 def _save_webp(
@@ -52,186 +70,135 @@ def _save_webp(
     temporary_png.unlink()
 
 
-def _example_availability() -> dict:
-    """Build illustrative daily availability with two deployment windows."""
-    utc = timezone.utc
-    start = datetime(2024, 4, 1, tzinfo=utc)
-    end = datetime(2024, 7, 1, tzinfo=utc)
-    deployments = [
-        DeploymentInfo(
-            device_code="EXAMPLE-HYDROPHONE",
-            device_id="example-1",
-            location_code="SITE-A",
-            location_name="Illustrative Site A",
-            begin_date=datetime(2024, 4, 8, tzinfo=utc),
-            end_date=datetime(2024, 5, 18, tzinfo=utc),
-            latitude=48.0,
-            longitude=-126.0,
-            depth=850.0,
-            citation=None,
-        ),
-        DeploymentInfo(
-            device_code="EXAMPLE-HYDROPHONE",
-            device_id="example-1",
-            location_code="SITE-B",
-            location_name="Illustrative Site B",
-            begin_date=datetime(2024, 5, 24, tzinfo=utc),
-            end_date=datetime(2024, 6, 26, tzinfo=utc),
-            latitude=48.5,
-            longitude=-127.0,
-            depth=1250.0,
-            citation=None,
-        ),
-    ]
-
-    gap_days = {
-        datetime(2024, 4, 20, tzinfo=utc).date(),
-        datetime(2024, 4, 21, tzinfo=utc).date(),
-        datetime(2024, 5, 3, tzinfo=utc).date(),
-        datetime(2024, 6, 8, tzinfo=utc).date(),
-        datetime(2024, 6, 9, tzinfo=utc).date(),
-        datetime(2024, 6, 10, tzinfo=utc).date(),
-    }
-    partial_coverage = {
-        datetime(2024, 4, 15, tzinfo=utc).date(): 0.55,
-        datetime(2024, 5, 12, tzinfo=utc).date(): 0.72,
-        datetime(2024, 6, 18, tzinfo=utc).date(): 0.35,
-    }
-
-    bins = []
-    cursor = start
-    while cursor < end:
-        bin_end = cursor + timedelta(days=1)
-        deployment_index = None
-        for index, deployment in enumerate(deployments):
-            if deployment.begin_date < bin_end and deployment.end_date > cursor:
-                deployment_index = index
-                break
-
-        if deployment_index is None:
-            status = "not_deployed"
-            coverage = None
-        elif cursor.date() in gap_days:
-            status = "no_data"
-            coverage = 0.0
-        else:
-            coverage = partial_coverage.get(cursor.date(), 1.0)
-            status = "data"
-
-        bins.append(
-            {
-                "start": cursor,
-                "end": bin_end,
-                "coverage": coverage,
-                "status": status,
-                "deployment_index": deployment_index,
-            }
-        )
-        cursor = bin_end
-
-    summaries = []
-    for index, deployment in enumerate(deployments):
-        deployment_bins = [
-            item for item in bins if item["deployment_index"] == index
-        ]
-        bins_with_data = sum((item["coverage"] or 0) > 0 for item in deployment_bins)
-        summaries.append(
-            {
-                "deployment_index": index,
-                "device_code": deployment.device_code,
-                "location_name": deployment.location_name,
-                "location_code": deployment.location_code,
-                "begin_date": deployment.begin_date,
-                "end_date": deployment.end_date,
-                "bins_total": len(deployment_bins),
-                "bins_with_data": bins_with_data,
-                "coverage_ratio": bins_with_data / len(deployment_bins),
-            }
-        )
-
-    return {
-        "device_code": "EXAMPLE-HYDROPHONE",
-        "timezone": "UTC",
-        "bin_size": "day",
-        "start": start,
-        "end": end,
-        "deployments": deployments,
-        "bins": bins,
-        "deployment_summary": summaries,
-    }
-
-
-def _synthetic_hydrophone_audio() -> tuple[np.ndarray, int]:
-    """Create a deterministic signal with tones, sweeps, clicks, and noise."""
-    sample_rate = 16_000
-    duration = 24.0
-    times = np.arange(int(sample_rate * duration), dtype=np.float64) / sample_rate
-    rng = np.random.default_rng(20240714)
-
-    amplitude_modulation = 0.55 + 0.25 * np.sin(2 * np.pi * 0.18 * times)
-    signal = amplitude_modulation * (
-        0.20 * np.sin(2 * np.pi * 180 * times)
-        + 0.10 * np.sin(2 * np.pi * 360 * times)
-        + 0.06 * np.sin(2 * np.pi * 540 * times)
+def _download_onc_audio(destination: Path) -> None:
+    """Download ONC's public MP3 preview without requiring an ONC token."""
+    request = Request(
+        ONC_AUDIO_URL,
+        headers={"User-Agent": "onc-hydrophone-data documentation figure generator"},
     )
-
-    for sweep_start in (5.5, 10.8):
-        mask = (times >= sweep_start) & (times < sweep_start + 2.8)
-        sweep_times = times[mask] - sweep_start
-        envelope = np.sin(np.pi * sweep_times / 2.8) ** 2
-        signal[mask] += 0.32 * envelope * chirp(
-            sweep_times,
-            f0=650,
-            f1=2_600,
-            t1=2.8,
-            method="quadratic",
-        )
-
-    for click_time in (15.0, 16.2, 17.4, 18.6):
-        relative = times - click_time
-        envelope = np.exp(-0.5 * (relative / 0.018) ** 2)
-        signal += 0.28 * envelope * np.sin(2 * np.pi * 3_500 * times)
-
-    signal += 0.035 * rng.standard_normal(times.shape)
-    signal /= max(1.0, np.max(np.abs(signal)))
-    return signal.astype(np.float32), sample_rate
+    with urlopen(request, timeout=60) as response, destination.open("wb") as output:
+        shutil.copyfileobj(response, output)
 
 
 def generate_deployment_figures() -> None:
-    availability = _example_availability()
-
-    timeline = plot_deployment_availability_timeline(
-        availability,
-        title="Illustrative deployment and archive availability",
-        show=False,
+    fig, ax = plt.subplots(figsize=(12, 3.8))
+    ax.axis("off")
+    table = ax.table(
+        cellText=CURRENT_ENDEAVOUR_ARRAY,
+        colLabels=["Device code", "Array position", "Deployment began (UTC)", "Depth"],
+        colWidths=[0.24, 0.24, 0.34, 0.18],
+        cellLoc="left",
+        colLoc="left",
+        bbox=[0, 0.02, 1, 0.78],
     )
-    if timeline:
-        fig, _ = timeline
-        _save_webp(fig, "deployment_timeline")
-        plt.close(fig)
-
-    calendar = plot_availability_calendar(
-        availability,
-        title="Illustrative daily audio availability",
-        show=False,
+    table.auto_set_font_size(False)
+    table.set_fontsize(10.5)
+    for (row, column), cell in table.get_celld().items():
+        cell.set_edgecolor("#d4dde6")
+        cell.set_linewidth(0.8)
+        if row == 0:
+            cell.set_facecolor("#12324a")
+            cell.get_text().set_color("white")
+            cell.get_text().set_weight("bold")
+        else:
+            cell.set_facecolor("#f3f7fa" if row % 2 else "white")
+            if column == 0:
+                cell.get_text().set_weight("bold")
+                cell.get_text().set_color("#075985")
+    fig.text(
+        0.02,
+        0.94,
+        "Current Main Endeavour Field hydrophone array",
+        fontsize=17,
+        fontweight="bold",
+        color="#102a43",
     )
-    if calendar:
-        fig, _ = calendar
-        _save_webp(fig, "availability_calendar")
-        plt.close(fig)
+    fig.text(
+        0.02,
+        0.865,
+        "Official ONC deployment records • positions A–D • 47.949322° N, 129.098209° W",
+        fontsize=10.5,
+        color="#486581",
+    )
+    _save_webp(fig, "deployment_inventory", bbox_inches=None)
+    plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(12, 5.8))
+    historical_color = "#7b8794"
+    active_color = "#078080"
+    for index, (device, location, start_value, end_value, active) in enumerate(
+        ENDEAVOUR_DEPLOYMENT_HISTORY
+    ):
+        start = datetime.fromisoformat(start_value)
+        end = (
+            ONC_INVENTORY_SNAPSHOT
+            if end_value is None
+            else datetime.fromisoformat(end_value)
+        )
+        start_number = mdates.date2num(start)
+        width = mdates.date2num(end) - start_number
+        ax.barh(
+            index,
+            width,
+            left=start_number,
+            height=0.58,
+            color=active_color if active else historical_color,
+            edgecolor="white",
+            linewidth=0.8,
+        )
+
+    ax.set_yticks(range(len(ENDEAVOUR_DEPLOYMENT_HISTORY)))
+    ax.set_yticklabels(
+        [
+            f"{device}\n{location}"
+            for device, location, *_ in ENDEAVOUR_DEPLOYMENT_HISTORY
+        ],
+        fontsize=9.5,
+    )
+    ax.invert_yaxis()
+    ax.xaxis.set_major_locator(mdates.YearLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    ax.set_xlim(datetime(2018, 1, 1), datetime(2027, 1, 1))
+    ax.grid(axis="x", color="#d9e2ec", linewidth=0.8)
+    ax.set_axisbelow(True)
+    ax.spines[["top", "right", "left"]].set_visible(False)
+    ax.tick_params(axis="y", length=0, pad=8)
+    ax.tick_params(axis="x", colors="#486581")
+    ax.set_title(
+        "Real hydrophone deployment history at Main Endeavour Field\n"
+        "Official ONC records • ongoing deployments shown through 14 July 2026",
+        loc="left",
+        fontsize=15,
+        fontweight="bold",
+        color="#102a43",
+        pad=16,
+    )
+    fig.legend(
+        handles=[
+            Patch(facecolor=historical_color, label="Completed deployment"),
+            Patch(facecolor=active_color, label="Ongoing at ONC snapshot"),
+        ],
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.015),
+        ncol=2,
+        frameon=False,
+    )
+    fig.tight_layout(rect=(0.04, 0.12, 0.98, 0.98))
+    _save_webp(fig, "deployment_timeline", bbox_inches=None)
+    plt.close(fig)
 
 
-def generate_spectrogram_figures() -> None:
-    audio, sample_rate = _synthetic_hydrophone_audio()
+def generate_spectrogram_figures(audio_path: Path) -> None:
     generator = SpectrogramGenerator(
         win_dur=0.128,
         overlap=0.75,
-        freq_lims=(50, 5_000),
-        clim=(-50, 0),
+        freq_lims=(20, 2_000),
+        clim=(-80, -25),
         log_freq=False,
         backend="scipy",
         quiet=True,
     )
+    audio, sample_rate, _ = generator.load_audio(audio_path)
     frequencies, times, _, power_db = generator.compute_spectrogram(
         audio,
         sample_rate,
@@ -241,7 +208,7 @@ def generate_spectrogram_figures() -> None:
         frequencies,
         times,
         power_db,
-        title="Illustrative local spectrogram (synthetic audio)",
+        title="Humpback whale calls — Folger Passage — 2012-08-01 12:24 UTC",
         save_path=temporary_spectrogram,
     )
     plt.close(fig)
@@ -256,12 +223,12 @@ def generate_spectrogram_figures() -> None:
     temporary_spectrogram.unlink()
 
     comparisons = []
-    for window_seconds in (0.064, 0.5):
+    for window_seconds in (0.032, 0.5):
         comparison_generator = SpectrogramGenerator(
             win_dur=window_seconds,
             overlap=0.75,
-            freq_lims=(50, 5_000),
-            clim=(-50, 0),
+            freq_lims=(20, 2_000),
+            clim=(-80, -25),
             log_freq=False,
             backend="scipy",
             quiet=True,
@@ -287,12 +254,12 @@ def generate_spectrogram_figures() -> None:
             db,
             shading="auto",
             cmap="turbo",
-            vmin=-50,
-            vmax=0,
+            vmin=-80,
+            vmax=-25,
         )
         axis.set_ylabel("Frequency (Hz)")
         axis.set_title(f"Window duration: {window_seconds:g} s")
-        axis.set_ylim(50, 5_000)
+        axis.set_ylim(20, 2_000)
     axes[-1].set_xlabel("Time (s)")
     fig.colorbar(
         image,
@@ -301,18 +268,41 @@ def generate_spectrogram_figures() -> None:
         pad=0.02,
         shrink=0.86,
     )
-    fig.suptitle("Time–frequency trade-off (synthetic audio example)")
+    fig.suptitle(
+        "Time–frequency trade-off — ONC humpback calls, Folger Passage"
+    )
     _save_webp(fig, "spectrogram_window_comparison", bbox_inches=None)
     plt.close(fig)
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--audio-file",
+        type=Path,
+        help=(
+            "Use this ONC audio file for spectrogram figures instead of "
+            "downloading the public ONC preview"
+        ),
+    )
+    args = parser.parse_args()
+
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     for obsolete_png in OUTPUT_DIR.glob("*.png"):
         obsolete_png.unlink()
+    obsolete_calendar = OUTPUT_DIR / "availability_calendar.webp"
+    if obsolete_calendar.exists():
+        obsolete_calendar.unlink()
     generate_deployment_figures()
-    generate_spectrogram_figures()
+    if args.audio_file:
+        generate_spectrogram_figures(args.audio_file)
+    else:
+        with tempfile.TemporaryDirectory(prefix="onc-docs-audio-") as temp_dir:
+            audio_path = Path(temp_dir) / "folger_humpback.mp3"
+            _download_onc_audio(audio_path)
+            generate_spectrogram_figures(audio_path)
     print(f"Generated documentation figures in {OUTPUT_DIR}")
+    print(f"Deployment source: {ONC_INVENTORY_SOURCE}")
 
 
 if __name__ == "__main__":
