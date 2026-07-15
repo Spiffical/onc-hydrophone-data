@@ -1,0 +1,1628 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="User guide and API reference for downloading ONC hydrophone data.">
+      
+      
+        <meta name="author" content="ONC Hydrophone Data Contributors">
+      
+      
+        <link rel="canonical" href="https://spiffical.github.io/onc-hydrophone-data/onc_spectrogram_options/">
+      
+      
+        <link rel="prev" href="../downloads/">
+      
+      
+        <link rel="next" href="../troubleshooting/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Choose ONC Server Spectrograms - ONC Hydrophone Data</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#onc-spectrogram-products-and-server-options" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="ONC Hydrophone Data" class="md-header__button md-logo" aria-label="ONC Hydrophone Data" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ONC Hydrophone Data
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Choose ONC Server Spectrograms
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Spiffical/onc-hydrophone-data" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Spiffical/onc-hydrophone-data
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../setup/" class="md-tabs__link">
+          
+  
+  
+  Start Here
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../audio_downloads/" class="md-tabs__link">
+          
+  
+  
+  How-to Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reference/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="ONC Hydrophone Data" class="md-nav__button md-logo" aria-label="ONC Hydrophone Data" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    ONC Hydrophone Data
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Spiffical/onc-hydrophone-data" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Spiffical/onc-hydrophone-data
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Start Here
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Start Here
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Install & Configure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inventory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. Find a Hydrophone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. Audio to Spectrogram
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How-to Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    How-to Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audio_downloads/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Download Audio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom_spectrograms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generate Local Spectrograms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../downloads/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced & Batch Downloads
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose ONC Server Spectrograms
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose ONC Server Spectrograms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quick-chooser" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick chooser
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mat-spectral-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MAT spectral resolution
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MAT spectral resolution">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#python-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#concatenation-and-collation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concatenation and collation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-channel-acquisition-and-diversion-filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source, channel, acquisition, and diversion filters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pngpdf-server-plot-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PNG/PDF server plot options
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-onc-generates-spectrograms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How ONC generates spectrograms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inspect-the-live-options-for-a-device" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inspect the live options for a device
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/downloader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HydrophoneDownloader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/deployment_checker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment Checker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/spectrogram_generator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Spectrogram Generator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/onc_common/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ONC Common Helpers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quick-chooser" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick chooser
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mat-spectral-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MAT spectral resolution
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MAT spectral resolution">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#python-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#concatenation-and-collation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concatenation and collation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-channel-acquisition-and-diversion-filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source, channel, acquisition, and diversion filters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pngpdf-server-plot-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PNG/PDF server plot options
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-onc-generates-spectrograms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How ONC generates spectrograms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inspect-the-live-options-for-a-device" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inspect the live options for a device
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="onc-spectrogram-products-and-server-options">ONC Spectrogram Products and Server Options<a class="headerlink" href="#onc-spectrogram-products-and-server-options" title="Permanent link">&para;</a></h1>
+<p>Ocean Networks Canada (ONC) provides several forms of hydrophone spectral data.
+The best choice depends on whether you need a quick visual scan, compact data
+for long-term analysis, the values shown in ONC's plots, or the highest available
+time and frequency resolution.</p>
+<p>This page summarizes the official <a href="https://wiki.oceannetworks.ca/spaces/DP/pages/42174569/45">ONC Hydrophone Spectral Data product
+(HSD)</a> and shows how
+its server-side options map to this package. ONC reports the options available
+for a particular device and format through its discovery API, so a device may
+offer only a subset of the values listed here.</p>
+<div class="admonition tip">
+<p class="admonition-title">Choose the workflow that matches the data you need</p>
+<p>To retain the source audio and control the FFT and output settings, follow
+<strong><a href="../quickstart/">Download Audio and Make a Spectrogram</a></strong>. To retrieve
+ONC-generated or calibrated spectral products, use the options on this
+page.</p>
+</div>
+<h2 id="quick-chooser">Quick chooser<a class="headerlink" href="#quick-chooser" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Goal</th>
+<th>ONC format and option</th>
+<th>Retrieval and size</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Browse five-minute periods visually</td>
+<td>PNG with default plot options</td>
+<td>Usually fastest because default plots are pre-generated</td>
+<td>Approximately 1200 × 900 pixels; one plot normally represents one source audio file.</td>
+</tr>
+<tr>
+<td>Scan a long period visually</td>
+<td>PDF, optionally <code>Daily</code> or <code>Weekly</code> concatenation</td>
+<td>Generated on demand; slower than archived PNG</td>
+<td>Higher-resolution, multi-page output intended for visual review.</td>
+</tr>
+<tr>
+<td>Analyze long periods or make probability-density summaries</td>
+<td>MAT with <code>dpo_spectralDataDownsample=1</code></td>
+<td>Fastest and smallest MAT choice</td>
+<td>Pre-generated one-minute ensemble averages; this is ONC's MAT default.</td>
+</tr>
+<tr>
+<td>Analyze the values represented in the PNG/PDF plot</td>
+<td>MAT with <code>dpo_spectralDataDownsample=2</code></td>
+<td>Generated on demand</td>
+<td>Downsampled in time and frequency to approximately the plot's useful pixel resolution.</td>
+</tr>
+<tr>
+<td>Preserve the highest server-produced resolution</td>
+<td>MAT with <code>dpo_spectralDataDownsample=0</code></td>
+<td>Slowest and largest</td>
+<td>Usually 0.5 seconds or better in time and roughly 1 Hz frequency bins, depending on the hydrophone and calibration.</td>
+</tr>
+<tr>
+<td>Work with low-bandwidth or diversion-period spectral files</td>
+<td>FFT source or <code>.fft</code> files, where available</td>
+<td>Device-dependent</td>
+<td>Lower resolution than audio-sourced spectra but sometimes available when audio is not; may span a wider frequency range.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition important">
+<p class="admonition-title">Package default versus ONC default</p>
+<p>ONC's default MAT option is the pre-generated one-minute product
+(<code>dpo_spectralDataDownsample=1</code>). <code>HydrophoneDownloader</code> currently defaults
+to plot resolution (<code>2</code>) because the package was designed around
+spectrogram-level analysis. Choose <code>1</code> explicitly when speed and compact
+long-term data are more important than plot-level resolution.</p>
+</div>
+<h2 id="mat-spectral-resolution">MAT spectral resolution<a class="headerlink" href="#mat-spectral-resolution" title="Permanent link">&para;</a></h2>
+<p>The <a href="https://wiki.oceannetworks.ca/spaces/DP/pages/114032814/Spectral+Data+Downsampling">ONC spectral-data downsampling
+documentation</a>
+defines three MAT resolutions:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>ONC name</th>
+<th>What ONC returns</th>
+<th>Concatenation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>1</code></td>
+<td>One-minute</td>
+<td>Pre-generated one-minute ensemble averages. ONC averages in linear/pressure units and converts back to dB. Frequency bins may also be reduced.</td>
+<td><code>Concatenate</code>, <code>Daily</code>, or <code>None</code></td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td>Spectrogram resolution</td>
+<td>The spectral values used at approximately the useful resolution of ONC's PNG/PDF plot. ONC notes these files are commonly around one tenth the size of full resolution.</td>
+<td>One MAT file per source audio file (<code>None</code>)</td>
+</tr>
+<tr>
+<td><code>0</code></td>
+<td>Full resolution</td>
+<td>Resolution determined by the hydrophone sample rate and calibration.</td>
+<td>One MAT file per source audio file (<code>None</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Plot-resolution and full-resolution MAT files are not normally stored in the
+archive. ONC generates them from the source data when requested. ONC estimates
+about 25 seconds of server processing for each five-minute source file, although
+actual queue and processing time varies. Keep non-default requests small; ONC's
+specific downsampling guide recommends no more than one month per request.</p>
+<h3 id="python-examples">Python examples<a class="headerlink" href="#python-examples" title="Permanent link">&para;</a></h3>
+<p>Run this setup once before the Python examples on this page. The two-hour range is
+small enough for learning; begin with fewer windows for full-resolution output.</p>
+<pre><code class="language-python">from datetime import datetime, timezone
+
+from onc_hydrophone_data.data import HydrophoneDownloader
+from onc_hydrophone_data.onc.common import load_config
+
+ONC_TOKEN, DATA_DIR = load_config()
+DEVICE = &quot;ICLISTENHF6324&quot;
+start = datetime(2024, 4, 1, 12, 0, tzinfo=timezone.utc)
+end = datetime(2024, 4, 1, 14, 0, tzinfo=timezone.utc)
+
+# Use ONC's compact, pre-generated one-minute MAT product by default.
+dl = HydrophoneDownloader(
+    ONC_TOKEN,
+    DATA_DIR,
+    spectral_downsample=1,
+)
+</code></pre>
+<p>Or override the ONC data-product options for one workflow:</p>
+<pre><code class="language-python"># Fast, compact one-minute MAT data.
+one_minute = dl.download_spectrograms_for_range(
+    device_code=DEVICE,
+    start_dt=start,
+    end_dt=end,
+    spectrograms_per_batch=12,
+    data_product_options={
+        &quot;dpo_spectralDataDownsample&quot;: 1,
+        &quot;dpo_spectrogramConcatenation&quot;: &quot;Concatenate&quot;,
+    },
+)
+
+# Data at approximately ONC's plotted spectrogram resolution.
+plot_resolution = dl.download_spectrograms_for_range(
+    device_code=DEVICE,
+    start_dt=start,
+    end_dt=end,
+    spectrograms_per_batch=6,
+    data_product_options={
+        &quot;dpo_spectralDataDownsample&quot;: 2,
+        &quot;dpo_spectrogramConcatenation&quot;: &quot;None&quot;,
+    },
+)
+
+# Highest server-produced resolution. Start with a small time range.
+full_resolution = dl.download_spectrograms_for_range(
+    device_code=DEVICE,
+    start_dt=start,
+    end_dt=end,
+    spectrograms_per_batch=1,
+    data_product_options={
+        &quot;dpo_spectralDataDownsample&quot;: 0,
+        &quot;dpo_spectrogramConcatenation&quot;: &quot;None&quot;,
+    },
+)
+</code></pre>
+<h2 id="concatenation-and-collation">Concatenation and collation<a class="headerlink" href="#concatenation-and-collation" title="Permanent link">&para;</a></h2>
+<p>The official <a href="https://wiki.oceannetworks.ca/spaces/DP/pages/48695940/Spectrogram+Concatenation">ONC spectrogram concatenation
+guide</a>
+describes how source files can be grouped:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Formats</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>None</code></td>
+<td>MAT, PNG, PDF</td>
+<td>One output for each compatible source audio/FFT file. This package uses <code>None</code> by default so five-minute windows stay separate.</td>
+</tr>
+<tr>
+<td><code>Concatenate</code></td>
+<td>One-minute MAT</td>
+<td>Combines compatible data until ONC's file-size or frequency-compatibility limit is reached. This is ONC's default for MAT.</td>
+</tr>
+<tr>
+<td><code>Daily</code></td>
+<td>One-minute MAT, PNG, PDF</td>
+<td>Produces daily output. Spectral data is assembled into one-minute non-overlapping averages.</td>
+</tr>
+<tr>
+<td><code>Weekly</code></td>
+<td>PNG, PDF</td>
+<td>Produces weekly plots; the official HSD page describes five-minute averages for weekly plot data.</td>
+</tr>
+<tr>
+<td><code>Adjacent</code></td>
+<td>PNG, PDF</td>
+<td>For a search of five minutes or less, joins adjacent source audio files and calculates one plot covering the requested interval.</td>
+</tr>
+</tbody>
+</table>
+<p>Do not combine <code>Concatenate</code> or <code>Daily</code> with MAT downsampling values <code>0</code> or <code>2</code>.
+Those resolutions are generated per source file and ONC's user interface hides
+the concatenation control when either is selected.</p>
+<h2 id="source-channel-acquisition-and-diversion-filters">Source, channel, acquisition, and diversion filters<a class="headerlink" href="#source-channel-acquisition-and-diversion-filters" title="Permanent link">&para;</a></h2>
+<p>These options are device-dependent. Values below are the current values exposed
+by ONC's discovery API for HSD products.</p>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Values</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dpo_spectrogramSource</code></td>
+<td><code>MIX</code>, <code>WAVFLAC</code>, <code>FFT</code></td>
+<td>PNG/PDF only. Prefer audio and fill gaps with FFT (<code>MIX</code>), require audio (<code>WAVFLAC</code>), or require FFT source data (<code>FFT</code>).</td>
+</tr>
+<tr>
+<td><code>dpo_hydrophoneChannel</code></td>
+<td><code>H1</code>, <code>H2</code>, <code>H3</code>, <code>All</code></td>
+<td>Select a channel on multi-channel hydrophone arrays. <code>H1</code> is ONC's default.</td>
+</tr>
+<tr>
+<td><code>dpo_hydrophoneAcquisitionMode</code></td>
+<td><code>LF</code>, <code>HF</code>, <code>All</code></td>
+<td>Select low- or high-sample-rate periods on duty-cycled hydrophones.</td>
+</tr>
+<tr>
+<td><code>dpo_hydrophoneDataDiversionMode</code></td>
+<td><code>OD</code>, <code>LPF</code>, <code>HPF</code>, <code>All</code></td>
+<td>Select original, low-pass-filtered, high-pass-filtered, or every available diversion mode. <code>OD</code> is ONC's default.</td>
+</tr>
+</tbody>
+</table>
+<p>For example:</p>
+<pre><code class="language-python">result = dl.download_spectrograms_for_range(
+    device_code=DEVICE,
+    start_dt=start,
+    end_dt=end,
+    spectrograms_per_batch=6,
+    data_product_options={
+        &quot;dpo_spectralDataDownsample&quot;: 2,
+        &quot;dpo_hydrophoneChannel&quot;: &quot;H1&quot;,
+        &quot;dpo_hydrophoneAcquisitionMode&quot;: &quot;All&quot;,
+        &quot;dpo_hydrophoneDataDiversionMode&quot;: &quot;OD&quot;,
+    },
+)
+</code></pre>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The ONC wiki uses <code>WAV</code> in some older spectrogram-source examples. The
+current discovery API reports <code>WAVFLAC</code> for the audio-only value. Query the
+discovery API before building long-lived automation.</p>
+</div>
+<h2 id="pngpdf-server-plot-options">PNG/PDF server plot options<a class="headerlink" href="#pngpdf-server-plot-options" title="Permanent link">&para;</a></h2>
+<p>ONC can regenerate PNG/PDF plots with custom rendering options. Changing any
+default plot option normally forces on-demand generation instead of returning a
+pre-generated plot.</p>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Current values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dpo_spectrogramColourPalette</code></td>
+<td><code>0</code> through <code>5</code>; <code>0</code> is ONC's modified-rainbow default and <code>1</code>–<code>5</code> are alternate sequential or grayscale palettes.</td>
+</tr>
+<tr>
+<td><code>dpo_lowerColourLimit</code></td>
+<td><code>-1000</code> for the device default, or a value from <code>-160</code> to <code>140</code>.</td>
+</tr>
+<tr>
+<td><code>dpo_upperColourLimit</code></td>
+<td><code>-1000</code> for the device default, or a value from <code>-160</code> to <code>140</code>.</td>
+</tr>
+<tr>
+<td><code>dpo_spectrogramFrequencyUpperLimit</code></td>
+<td><code>-1</code> for the device default, presets <code>1000</code> or <code>10000</code>, or an integer from <code>100</code> to <code>500000</code> Hz.</td>
+</tr>
+</tbody>
+</table>
+<p>The current high-level <code>download_spectrograms_*</code> workflows in this package
+request MAT files. The filters above are documented for users working in the
+ONC portal or making a lower-level PNG/PDF data-product request; archived PNG
+downloads do not apply custom rendering filters.</p>
+<h2 id="how-onc-generates-spectrograms">How ONC generates spectrograms<a class="headerlink" href="#how-onc-generates-spectrograms" title="Permanent link">&para;</a></h2>
+<p>ONC describes its server process as a modified Welch calculation:</p>
+<ol>
+<li>Read source WAV, FLAC, HYD, or (where needed) FFT spectral data.</li>
+<li>Split audio into Hann-windowed segments with 50% overlap. The window length
+   equals the FFT length.</li>
+<li>Calculate a power spectrum for every segment. Frequency forms the rows and
+   segment time forms the columns.</li>
+<li>Apply hydrophone calibration when calibration data is available. FFT length
+   and usable frequency range can depend on sample rate, calibration, and device
+   attributes.</li>
+<li>For PNG/PDF and reduced-resolution MAT products, re-bin in time and frequency
+   using linear-domain boxcar averaging, then convert back to dB. This avoids
+   averaging logarithmic dB values directly and avoids relying on image-renderer
+   resampling.</li>
+<li>Render a plot or save the <code>Meta</code> and <code>SpectData</code> structures in a MAT file.</li>
+</ol>
+<p>ONC server products and locally generated products are therefore not
+interchangeable by default. ONC products may include hydrophone calibration and
+absolute sound-level information, while this package's local
+<code>SpectrogramGenerator</code> currently stores an uncalibrated power array plus a
+relative-to-maximum dB array.</p>
+<div class="admonition warning">
+<p class="admonition-title">Check ONC's current PSD-units notice</p>
+<p>ONC's HSD wiki currently reports a known normalization issue in
+audio-derived spectral products: values labelled as power spectral density
+were not divided by frequency-bin width and therefore behave as power
+spectrum values. ONC gives a correction of
+<code>10 * log10(1 / frequency_bin_width_hz)</code> for existing products and says most
+products use 10 Hz bins. Treat the HSD wiki as the authoritative, changing
+source before interpreting absolute levels.</p>
+</div>
+<h2 id="inspect-the-live-options-for-a-device">Inspect the live options for a device<a class="headerlink" href="#inspect-the-live-options-for-a-device" title="Permanent link">&para;</a></h2>
+<p>ONC options can change and are responsive to device, deployment, and format.
+Use the discovery API before launching a large request:</p>
+<pre><code class="language-python">from onc.onc import ONC
+
+onc = ONC(ONC_TOKEN, showInfo=False)
+products = onc.getDataProducts({
+    &quot;deviceCode&quot;: DEVICE,
+    &quot;dataProductCode&quot;: &quot;HSD&quot;,
+    &quot;extension&quot;: &quot;mat&quot;,  # or png / pdf
+})
+
+for product in products:
+    for option in product.get(&quot;dataProductOptions&quot;, []):
+        print(
+            option[&quot;option&quot;],
+            &quot;default=&quot;, option.get(&quot;defaultValue&quot;),
+            &quot;values=&quot;, option.get(&quot;allowableValues&quot;),
+            &quot;range=&quot;, option.get(&quot;allowableRange&quot;),
+        )
+</code></pre>
+<p>See also ONC's <a href="https://wiki.oceannetworks.ca/spaces/DP/pages/42175229/Hydrophone+Channel">Hydrophone Channel
+documentation</a>
+and <a href="https://data.oceannetworks.ca/OpenAPI">Oceans 3.0 OpenAPI documentation</a>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../downloads/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Advanced &amp; Batch Downloads">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Advanced & Batch Downloads
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../troubleshooting/" class="md-footer__link md-footer__link--next" aria-label="Next: Troubleshooting">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Troubleshooting
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

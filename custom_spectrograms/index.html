@@ -1,0 +1,1558 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="User guide and API reference for downloading ONC hydrophone data.">
+      
+      
+        <meta name="author" content="ONC Hydrophone Data Contributors">
+      
+      
+        <link rel="canonical" href="https://spiffical.github.io/onc-hydrophone-data/custom_spectrograms/">
+      
+      
+        <link rel="prev" href="../audio_downloads/">
+      
+      
+        <link rel="next" href="../downloads/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Generate Local Spectrograms - ONC Hydrophone Data</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#generate-local-spectrograms" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="ONC Hydrophone Data" class="md-header__button md-logo" aria-label="ONC Hydrophone Data" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ONC Hydrophone Data
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Generate Local Spectrograms
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Spiffical/onc-hydrophone-data" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Spiffical/onc-hydrophone-data
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../setup/" class="md-tabs__link">
+          
+  
+  
+  Start Here
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../audio_downloads/" class="md-tabs__link">
+          
+  
+  
+  How-to Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reference/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="ONC Hydrophone Data" class="md-nav__button md-logo" aria-label="ONC Hydrophone Data" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    ONC Hydrophone Data
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Spiffical/onc-hydrophone-data" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Spiffical/onc-hydrophone-data
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Start Here
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Start Here
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Install & Configure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inventory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. Find a Hydrophone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. Audio to Spectrogram
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How-to Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    How-to Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audio_downloads/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Download Audio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generate Local Spectrograms
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generate Local Spectrograms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#choose-the-local-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choose the local workflow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#process-an-audio-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Process an audio directory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#choose-useful-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choose useful parameters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Choose useful parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#window-length-trade-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Window length trade-off
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#process-one-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Process one file
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-line-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Command-line workflow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generate-around-a-known-signal-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generate around a known signal time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generate-local-event-spectrograms-from-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generate local event spectrograms from JSON
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#understand-the-saved-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Understand the saved values
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../downloads/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced & Batch Downloads
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../onc_spectrogram_options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose ONC Server Spectrograms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/downloader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HydrophoneDownloader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/deployment_checker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment Checker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/spectrogram_generator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Spectrogram Generator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/onc_common/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ONC Common Helpers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#choose-the-local-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choose the local workflow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#process-an-audio-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Process an audio directory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#choose-useful-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choose useful parameters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Choose useful parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#window-length-trade-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Window length trade-off
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#process-one-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Process one file
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-line-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Command-line workflow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generate-around-a-known-signal-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generate around a known signal time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generate-local-event-spectrograms-from-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generate local event spectrograms from JSON
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#understand-the-saved-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Understand the saved values
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="generate-local-spectrograms">Generate Local Spectrograms<a class="headerlink" href="#generate-local-spectrograms" title="Permanent link">&para;</a></h1>
+<p>Local spectrograms are computed from downloaded FLAC/WAV audio. You control the
+FFT window, overlap, frequency range, colour scale, backend, and saved formats.</p>
+<p>If you have not downloaded audio yet, start with
+<strong><a href="../audio_downloads/">Download Audio</a></strong> or the complete
+<strong><a href="../quickstart/">audio-to-spectrogram walkthrough</a></strong>.</p>
+<h2 id="choose-the-local-workflow">Choose the local workflow<a class="headerlink" href="#choose-the-local-workflow" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Workflow</th>
+<th>What it does</th>
+<th>Clip-boundary handling</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>process_single_file()</code> / <code>process_directory()</code></td>
+<td>Computes a spectrogram from a complete local audio file</td>
+<td>Uses only complete STFT windows; it does not add artificial samples beyond the file</td>
+</tr>
+<tr>
+<td><code>clip_start</code> / <code>clip_end</code> or <code>--clip-start</code> / <code>--clip-end</code></td>
+<td>Computes a selected interval from local audio</td>
+<td>Uses automatic half-window context by default, then removes it</td>
+</tr>
+<tr>
+<td><code>process_event()</code></td>
+<td>Computes around a known time in one local audio file</td>
+<td>Automatically reads an extra half-window on each side, then removes that context</td>
+</tr>
+<tr>
+<td><code>--event-time</code> command-line mode</td>
+<td>Command-line form of <code>process_event()</code></td>
+<td>Same automatic half-window context and trimming</td>
+</tr>
+<tr>
+<td><code>create_custom_spectrograms_from_json()</code></td>
+<td>Downloads ONC audio for timestamped events and computes spectrograms locally</td>
+<td>Automatically downloads extra context, computes the STFT, and trims back to the requested interval</td>
+</tr>
+<tr>
+<td><code>download_requests_from_json()</code></td>
+<td>Downloads spectrogram products computed by ONC</td>
+<td>Processing at product boundaries is controlled by ONC</td>
+</tr>
+</tbody>
+</table>
+<p>Use <code>create_custom_spectrograms_from_json()</code> when you want the FFT and plotting
+settings in the JSON file to control newly computed local spectrograms. Use
+<code>download_requests_from_json()</code> when you want ONC's existing or
+server-generated spectrogram products.</p>
+<h2 id="process-an-audio-directory">Process an audio directory<a class="headerlink" href="#process-an-audio-directory" title="Permanent link">&para;</a></h2>
+<pre><code class="language-python">from pathlib import Path
+
+from onc_hydrophone_data.audio import SpectrogramGenerator
+
+audio_dir = Path(&quot;data/DEVICE/RUN/audio&quot;)
+output_dir = audio_dir.parent / &quot;custom_spectrograms&quot;
+
+generator = SpectrogramGenerator(
+    win_dur=0.5,
+    overlap=0.75,
+    freq_lims=(20, 10_000),
+    crop_freq_lims=True,
+    clim=(-60, 0),
+    log_freq=False,
+)
+
+results = generator.process_directory(
+    audio_dir,
+    output_dir,
+    save_plot=True,   # PNG
+    save_mat=True,    # MATLAB arrays + metadata
+    save_npy=False,
+    max_workers=4,
+)
+</code></pre>
+<p>One successful result contains <code>png_file</code>, <code>mat_file</code>, audio metadata, and
+processing settings. Batch results omit the large in-memory arrays by default
+to keep memory use bounded.</p>
+<p><img alt="Local spectrogram of ONC humpback whale calls recorded at Folger Passage" loading="lazy" src="../assets/figures/example_local_spectrogram.webp" width="100%" /></p>
+<p>The real ONC recording contains repeated humpback calls with acoustic energy
+that changes over time and frequency.</p>
+<h2 id="choose-useful-parameters">Choose useful parameters<a class="headerlink" href="#choose-useful-parameters" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Start with</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>win_dur</code></td>
+<td><code>0.5</code> s</td>
+<td>Longer windows improve frequency detail; shorter windows improve timing detail</td>
+</tr>
+<tr>
+<td><code>overlap</code></td>
+<td><code>0.5</code>–<code>0.75</code></td>
+<td>Higher overlap creates more time columns and costs more compute</td>
+</tr>
+<tr>
+<td><code>freq_lims</code></td>
+<td>Your band of interest</td>
+<td>Controls the plotted frequency range</td>
+</tr>
+<tr>
+<td><code>crop_freq_lims</code></td>
+<td><code>True</code> for focused work</td>
+<td>Also removes out-of-band rows from MAT/NumPy output, saving disk and memory</td>
+</tr>
+<tr>
+<td><code>clim</code></td>
+<td><code>(-60, 0)</code></td>
+<td>Sets contrast in relative dB plots</td>
+</tr>
+<tr>
+<td><code>log_freq</code></td>
+<td><code>False</code> initially</td>
+<td>Use <code>True</code> when several frequency decades must fit on one axis</td>
+</tr>
+<tr>
+<td><code>backend</code></td>
+<td><code>"auto"</code></td>
+<td>Uses an available optimized backend and falls back to SciPy when needed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="window-length-trade-off">Window length trade-off<a class="headerlink" href="#window-length-trade-off" title="Permanent link">&para;</a></h3>
+<p><img alt="Comparison of short and long spectrogram windows" loading="lazy" src="../assets/figures/spectrogram_window_comparison.webp" width="100%" /></p>
+<p>The short window keeps brief events narrow in time but produces broader
+frequency bands. The long window sharpens steady tones and sweeps in frequency
+but spreads short events across time.</p>
+<div class="admonition info">
+<p class="admonition-title">Source recording</p>
+<p>Both figures are generated by <code>scripts/generate_docs_figures.py</code> from a
+public ONC recording made by <code>ICLISTENHF1205</code> at Folger Passage on
+2012-08-01 at 12:24 UTC. The script downloads ONC's public audio preview by
+default, or accepts an ONC audio file with <code>--audio-file</code>. See the
+<a href="https://ibase.oceannetworks.ca/view-item?i=9860">ONC source record</a>.
+The plots use relative power and are not calibrated sound-pressure level.</p>
+</div>
+<h2 id="process-one-file">Process one file<a class="headerlink" href="#process-one-file" title="Permanent link">&para;</a></h2>
+<pre><code class="language-python">result = generator.process_single_file(
+    audio_dir / &quot;example.flac&quot;,
+    output_dir,
+    save_plot=True,
+    save_mat=True,
+    save_npy=True,
+)
+
+print(result[&quot;png_file&quot;])
+print(result[&quot;mat_file&quot;])
+print(result[&quot;npy_file&quot;])
+</code></pre>
+<p>Use the single-file form while tuning parameters, then process the whole
+directory after the output looks right.</p>
+<h2 id="command-line-workflow">Command-line workflow<a class="headerlink" href="#command-line-workflow" title="Permanent link">&para;</a></h2>
+<p>From a cloned repository checkout:</p>
+<pre><code class="language-bash">python scripts/generate_spectrograms.py \
+    --input-dir data/DEVICE/RUN/audio \
+    --output-dir data/DEVICE/RUN/custom_spectrograms \
+    --win-dur 0.5 \
+    --overlap 0.75 \
+    --freq-min 20 \
+    --freq-max 10000 \
+    --crop-freq-lims \
+    --max-workers 4
+</code></pre>
+<p>Run <code>python scripts/generate_spectrograms.py --help</code> for every option.</p>
+<h2 id="generate-around-a-known-signal-time">Generate around a known signal time<a class="headerlink" href="#generate-around-a-known-signal-time" title="Permanent link">&para;</a></h2>
+<p>Use event mode when a signal occurs at a known offset in an existing audio
+file. The default retains five seconds before and after the event. It also reads
+an extra half-window of audio on each side while computing the STFT, then keeps
+only frames centred inside the requested ten-second interval. This ensures that
+every retained time bin is calculated from a complete analysis window.</p>
+<pre><code class="language-python">result = generator.process_event(
+    audio_dir / &quot;example.flac&quot;,
+    output_dir,
+    event_time_seconds=123.4,
+    pad_before_seconds=5,
+    pad_after_seconds=5,
+    edge_padding_seconds=&quot;auto&quot;,
+    save_plot=True,
+    save_mat=True,
+)
+</code></pre>
+<p><code>edge_padding_seconds="auto"</code> is the default and resolves to half the actual
+STFT window after the audio sample rate and any <code>win_length</code> override are known.
+The resolved value, event time, target interval, and retained padding are stored
+in the output metadata.</p>
+<p>The same mode is available from the command line:</p>
+<pre><code class="language-bash">python scripts/generate_spectrograms.py \
+    --input-file audio/example.flac \
+    --event-time 123.4 \
+    --event-pad-before 5 \
+    --event-pad-after 5 \
+    --output-dir spectrograms
+</code></pre>
+<h2 id="generate-local-event-spectrograms-from-json">Generate local event spectrograms from JSON<a class="headerlink" href="#generate-local-event-spectrograms-from-json" title="Permanent link">&para;</a></h2>
+<p>For many labeled events, one workflow can download the needed audio context,
+clip each event, and generate local spectrograms:</p>
+<pre><code class="language-python">from onc_hydrophone_data.data import HydrophoneDownloader
+from onc_hydrophone_data.onc.common import load_config
+
+onc_token, data_dir = load_config()
+dl = HydrophoneDownloader(onc_token, data_dir)
+
+results = dl.create_custom_spectrograms_from_json(
+    &quot;custom_requests.json&quot;,
+    clip_pad_seconds=&quot;auto&quot;,
+    save_mat=True,
+    save_png=True,
+)
+</code></pre>
+<pre><code class="language-json">{
+  &quot;defaults&quot;: {
+    &quot;deviceCode&quot;: &quot;ICLISTENHF6324&quot;,
+    &quot;pad_seconds&quot;: 10
+  },
+  &quot;generator_defaults&quot;: {
+    &quot;win_dur&quot;: 0.5,
+    &quot;overlap&quot;: 0.75,
+    &quot;freq_lims&quot;: [20, 10000],
+    &quot;crop_freq_lims&quot;: true
+  },
+  &quot;requests&quot;: [
+    {
+      &quot;timestamp&quot;: &quot;2024-04-01T12:30:00Z&quot;,
+      &quot;label&quot;: &quot;example event&quot;,
+      &quot;generator_options&quot;: {
+        &quot;log_freq&quot;: false
+      }
+    }
+  ]
+}
+</code></pre>
+<p>The workflow requests adjacent source files when padding crosses a five-minute
+boundary. With <code>clip_pad_seconds="auto"</code>, it adds half of the configured
+<code>win_dur</code> on both sides before computing the STFT, removes that context before
+relative-dB normalization, and returns only time bins centred inside the
+requested event interval. This prevents incomplete-window artifacts at the
+requested clip boundaries. If <code>generator_options</code> sets a sample-based
+<code>win_length</code> that differs from <code>win_dur</code>, set <code>clip_pad_seconds</code> explicitly in
+seconds so the download context matches that window.</p>
+<p>This edge handling applies to spectrograms computed locally by this package.
+Spectrograms returned by <code>download_requests_from_json()</code> or the other ONC
+spectrogram download methods are computed by ONC and follow ONC's processing.</p>
+<h2 id="understand-the-saved-values">Understand the saved values<a class="headerlink" href="#understand-the-saved-values" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>P</code> is the uncalibrated power spectrogram.</li>
+<li><code>PdB_norm</code> is power in dB relative to the maximum value in that file.</li>
+<li><code>F</code> contains frequency-bin centres in hertz.</li>
+<li><code>T</code> contains time-bin centres in seconds.</li>
+<li>Metadata records the source audio and FFT/generator settings.</li>
+</ul>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Local outputs are not automatically calibrated sound-pressure levels. If
+you need ONC calibration or standardized server products, read
+<strong><a href="../onc_spectrogram_options/">Choose ONC Server Spectrograms</a></strong>.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../audio_downloads/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Download Audio">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Download Audio
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../downloads/" class="md-footer__link md-footer__link--next" aria-label="Next: Advanced &amp; Batch Downloads">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Advanced & Batch Downloads
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
