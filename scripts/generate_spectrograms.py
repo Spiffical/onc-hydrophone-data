@@ -654,6 +654,11 @@ Examples:
     
     args = parser.parse_args()
 
+    if args.clip_pad_seconds is not None and args.clip_pad_seconds < 0:
+        parser.error(
+            "--clip-pad-seconds/--edge-pad-seconds must be non-negative"
+        )
+
     if args.event_time is not None:
         if not args.input_file:
             parser.error("--event-time requires --input-file")
@@ -674,8 +679,6 @@ Examples:
             parser.error("--event-pad-after must be non-negative")
         if args.event_pad_before + event_pad_after <= 0:
             parser.error("event padding must retain more than zero seconds")
-        if args.clip_pad_seconds is not None and args.clip_pad_seconds < 0:
-            parser.error("--edge-pad-seconds must be non-negative")
     
     try:
         print_header("CUSTOM SPECTROGRAM GENERATOR")
