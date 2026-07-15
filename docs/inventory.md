@@ -55,16 +55,14 @@ checker.show_device_deployments(
 )
 ```
 
-The plot below uses real ONC deployment records from Main Endeavour Field. The
-older single-hydrophone deployments are followed by the four-position array
-that includes `ICLISTENHF6324`.
+These real ONC records show older single-hydrophone deployments followed by the
+four-position Main Endeavour Field array that includes `ICLISTENHF6324`.
 
 ![Real ONC hydrophone deployment history at Main Endeavour Field](assets/figures/deployment_timeline.webp){: width="100%" loading="lazy" }
 
-Grey bars are completed deployments. Teal bars had no end date in the
-[official ONC inventory](https://wiki.oceannetworks.ca/spaces/O2KB/pages/72548584/ONC+Hydrophone+Location+Codes+Data+Types)
-when accessed on 2026-07-14. The legend sits below the time axis so it never
-covers a deployment bar.
+The [official ONC inventory](https://wiki.oceannetworks.ca/spaces/O2KB/pages/72548584/ONC+Hydrophone+Location+Codes+Data+Types)
+listed no end date for the four array deployments when accessed on 2026-07-14,
+meaning they were ongoing in that source snapshot.
 
 ## Confirm archive availability
 
@@ -104,10 +102,9 @@ timeline_fig.savefig(
 
 ![Timeline generated from real ONC archive availability for ICLISTENHF6324](assets/figures/availability_timeline.webp){: width="100%" loading="lazy" }
 
-Each row is a deployment. Green segments have archived data; red segments are
-gaps within a deployment; blank space separates deployment windows. The
-percentage at right summarizes bins with some data. The legend is placed below
-the axes so it does not obscure any interval.
+The availability result distinguishes archived data, gaps during a deployment,
+and dates when the device was not deployed. Coverage is calculated from the
+fraction of expected files present in each daily bin.
 
 ### Calendar view
 
@@ -127,10 +124,9 @@ calendar_fig.savefig(
 
 ![Calendar generated from real ONC archive availability for ICLISTENHF6324](assets/figures/availability_calendar.webp){: width="100%" loading="lazy" }
 
-Dark green days have high coverage, lighter green days are partial, red days
-have no data during a deployment, and grey days are outside deployment windows.
-Its legend also sits below the calendar, while the continuous coverage scale
-stays to the right.
+Each calendar value is the fraction of expected files found for that day. A
+zero value within a deployment is an archive gap; dates outside a deployment
+are recorded separately rather than treated as missing data.
 
 !!! info "Real archive result"
     Both plots above were generated on 2026-07-14 by running the documented

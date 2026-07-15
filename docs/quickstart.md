@@ -75,16 +75,13 @@ for result in results:
 The downloader skips non-empty audio files already present, so rerunning the
 same range resumes instead of downloading those files again.
 
-## What the spectrogram means
+## What the data show
 
 ![Locally generated spectrogram of ONC humpback whale audio from Folger Passage](assets/figures/example_local_spectrogram.webp){: width="100%" loading="lazy" }
 
-- **Horizontal axis:** time within the audio file
-- **Vertical axis:** frequency in hertz
-- **Colour:** power relative to the strongest value in that file, in dB
-- **Bright repeated traces:** humpback calls in this recording
-- **Vertical extent:** the frequencies present in each call
-- **Trace shape:** how a call's frequency content changes over time
+The recording contains repeated humpback calls whose acoustic energy changes
+over time and frequency. The spectrogram values are power in dB relative to the
+strongest value in the file, not calibrated sound-pressure level.
 
 !!! info "Real ONC audio"
     This figure was generated locally from a public ONC recording made by
@@ -99,7 +96,6 @@ Open one PNG and confirm:
 
 - the time range is what you intended;
 - the frequency range includes the signals you care about;
-- the colour limits reveal useful contrast;
 - the audio duration and number of files are reasonable.
 
 Then continue with **[Download Audio](audio_downloads.md)** for longer ranges and
