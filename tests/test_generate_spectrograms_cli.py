@@ -59,9 +59,17 @@ def test_event_argument_errors_use_argparse_without_traceback(
 
 
 @pytest.mark.parametrize("flag", ["--clip-pad-seconds", "--edge-pad-seconds"])
-def test_negative_clip_pad_without_event_uses_argparse_without_traceback(
+@pytest.mark.parametrize(
+    "event_args",
+    [
+        pytest.param([], id="without-event"),
+        pytest.param(["--event-time", "1"], id="with-event"),
+    ],
+)
+def test_negative_edge_padding_aliases_use_argparse_without_traceback(
     tmp_path: Path,
     flag: str,
+    event_args: list[str],
 ):
     input_path = tmp_path / "audio.wav"
     input_path.touch()
@@ -74,6 +82,7 @@ def test_negative_clip_pad_without_event_uses_argparse_without_traceback(
             str(input_path),
             flag,
             "-0.1",
+            *event_args,
         ],
         cwd=REPO_ROOT,
         text=True,
