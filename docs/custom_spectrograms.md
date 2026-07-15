@@ -42,9 +42,8 @@ to keep memory use bounded.
 
 ![Local spectrogram of ONC humpback whale calls recorded at Folger Passage](assets/figures/example_local_spectrogram.webp){: width="100%" loading="lazy" }
 
-The repeated bright traces are humpback calls in real ONC hydrophone audio.
-They make it easy to see how time-varying biological sounds appear in a local
-spectrogram.
+The real ONC recording contains repeated humpback calls with acoustic energy
+that changes over time and frequency.
 
 ## Choose useful parameters
 
