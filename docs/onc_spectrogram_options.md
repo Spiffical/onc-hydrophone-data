@@ -55,10 +55,19 @@ specific downsampling guide recommends no more than one month per request.
 
 ### Python examples
 
-Set a default for every request made by a downloader:
+Run this setup once before the Python examples on this page. The two-hour range is
+small enough for learning; begin with fewer windows for full-resolution output.
 
 ```python
+from datetime import datetime, timezone
+
 from onc_hydrophone_data.data import HydrophoneDownloader
+from onc_hydrophone_data.onc.common import load_config
+
+ONC_TOKEN, DATA_DIR = load_config()
+DEVICE = "ICLISTENHF6324"
+start = datetime(2024, 4, 1, 12, 0, tzinfo=timezone.utc)
+end = datetime(2024, 4, 1, 14, 0, tzinfo=timezone.utc)
 
 # Use ONC's compact, pre-generated one-minute MAT product by default.
 dl = HydrophoneDownloader(

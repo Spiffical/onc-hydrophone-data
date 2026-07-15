@@ -117,6 +117,12 @@ For many labeled events, one workflow can download the needed audio context,
 clip each event, and generate local spectrograms:
 
 ```python
+from onc_hydrophone_data.data import HydrophoneDownloader
+from onc_hydrophone_data.onc.common import load_config
+
+onc_token, data_dir = load_config()
+dl = HydrophoneDownloader(onc_token, data_dir)
+
 results = dl.create_custom_spectrograms_from_json(
     "custom_requests.json",
     save_mat=True,

@@ -170,7 +170,8 @@ def download_audio_files(
             False so rerunning a request resumes instead of wasting bandwidth.
 
     Returns:
-        Summary dict with files found/downloaded and extension used.
+        Summary dict with files found, downloaded during this call, skipped,
+        available locally after the call, errors, and the extension used.
     """
     self.logger.info(f'Finding audio files for {deviceCode} from {start_time} to {end_time}')
     try:
@@ -194,6 +195,7 @@ def download_audio_files(
         'files_found': 0,
         'files_downloaded': 0,
         'files_skipped': 0,
+        'files_available': 0,
         'errors': 0,
     }
 
@@ -240,7 +242,7 @@ def download_audio_files(
             attempts = {f: 0 for f in audio_files}
             max_attempts = 6
             attempt_round = 0
-            downloaded = len(existing_files)
+            downloaded = 0
             errors = 0
 
             if existing_files:
@@ -302,15 +304,19 @@ def download_audio_files(
                     time.sleep(5)
 
             self.logger.info(
-                f"{extension.upper()} files downloaded in {time.time() - download_start:.2f}s"
+                f"{extension.upper()} download pass completed in "
+                f"{time.time() - download_start:.2f}s "
+                f"({downloaded} downloaded, {len(existing_files)} skipped)"
             )
+            available = len(existing_files) + downloaded
             summary.update({
-                'extension_used': extension if downloaded else None,
+                'extension_used': extension if available else None,
                 'files_downloaded': downloaded,
                 'files_skipped': len(existing_files),
+                'files_available': available,
                 'errors': errors,
             })
-            if downloaded:
+            if available:
                 return summary
 
             self.logger.warning(

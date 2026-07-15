@@ -7,6 +7,9 @@ without querying ONC again.
 
 ## Start with a short range
 
+Run this setup first. The remaining examples on this page reuse `dl`, `DEVICE`,
+`start`, and `end` from this block.
+
 ```python
 from datetime import datetime, timezone
 
@@ -16,10 +19,14 @@ from onc_hydrophone_data.onc.common import load_config
 onc_token, data_dir = load_config()
 dl = HydrophoneDownloader(onc_token, data_dir)
 
+DEVICE = "ICLISTENHF6324"
+start = datetime(2024, 4, 1, 12, 0, tzinfo=timezone.utc)
+end = datetime(2024, 4, 1, 12, 10, tzinfo=timezone.utc)
+
 dl.download_audio_for_range(
-    device_code="ICLISTENHF6324",
-    start_dt=datetime(2024, 4, 1, 12, 0, tzinfo=timezone.utc),
-    end_dt=datetime(2024, 4, 1, 12, 10, tzinfo=timezone.utc),
+    device_code=DEVICE,
+    start_dt=start,
+    end_dt=end,
 )
 
 print("Audio directory:", dl.audio_path)
@@ -70,10 +77,13 @@ To explore seasonal or long-term variation without downloading every file,
 request a uniform sample:
 
 ```python
+sample_start = datetime(2024, 4, 1, tzinfo=timezone.utc)
+sample_end = datetime(2024, 4, 8, tzinfo=timezone.utc)
+
 result = dl.download_sampled_audio(
     device_code=DEVICE,
-    start_dt=start,
-    end_dt=end,
+    start_dt=sample_start,
+    end_dt=sample_end,
     total_audio_files=24,
     files_per_request=4,
 )

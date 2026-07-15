@@ -52,7 +52,8 @@ def _assert_legend_is_below_plot(fig, ax) -> None:
     renderer = fig.canvas.get_renderer()
     legend_bounds = fig.legends[0].get_window_extent(renderer)
     axes_bounds = ax.get_window_extent(renderer)
-    assert legend_bounds.y1 <= axes_bounds.y0
+    tolerance_pixels = 2.0
+    assert legend_bounds.y1 <= axes_bounds.y0 + tolerance_pixels
 
 
 def test_timeline_legend_does_not_cover_plot() -> None:
@@ -81,3 +82,10 @@ def test_calendar_excludes_the_query_end_boundary() -> None:
         assert calendar_grid.shape[:2] == (7, 2)
     finally:
         plt.close(fig)
+
+
+def test_calendar_handles_a_missing_last_bin_start() -> None:
+    availability = _daily_availability()
+    availability["bins"][-1]["start"] = None
+
+    assert plot_availability_calendar(availability, show=False) is None

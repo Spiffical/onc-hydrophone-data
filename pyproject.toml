@@ -48,7 +48,7 @@ where = ["."]
 include = ["onc_hydrophone_data*"]
 
 [tool.pytest.ini_options]
-addopts = "-m 'not integration'"
+addopts = ["-m", "not integration"]
 markers = [
     "integration: makes live ONC API requests and may download data",
 ]
