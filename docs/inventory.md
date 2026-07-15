@@ -33,7 +33,7 @@ Main Endeavour Field:
 
 ![Current ONC hydrophone-array deployments at Main Endeavour Field](assets/figures/deployment_inventory.webp){: width="100%" loading="lazy" }
 
-*Source: [ONC Hydrophone Location Codes & Data Types](https://wiki.oceannetworks.ca/pages/viewpage.action?pageId=72548654),
+*Source: [ONC Hydrophone Location Codes & Data Types](https://wiki.oceannetworks.ca/spaces/O2KB/pages/72548584/ONC+Hydrophone+Location+Codes+Data+Types),
 accessed 2026-07-14. An empty ONC end date means the deployment was ongoing in
 that source snapshot.*
 
@@ -62,7 +62,7 @@ that includes `ICLISTENHF6324`.
 ![Real ONC hydrophone deployment history at Main Endeavour Field](assets/figures/deployment_timeline.webp){: width="100%" loading="lazy" }
 
 Grey bars are completed deployments. Teal bars had no end date in the
-[official ONC inventory](https://wiki.oceannetworks.ca/pages/viewpage.action?pageId=72548654)
+[official ONC inventory](https://wiki.oceannetworks.ca/spaces/O2KB/pages/72548584/ONC+Hydrophone+Location+Codes+Data+Types)
 when accessed on 2026-07-14. The legend sits below the time axis so it never
 covers a deployment bar.
 
@@ -91,8 +91,18 @@ availability = checker.get_device_availability(
 ```python
 from onc_hydrophone_data.utils import plot_deployment_availability_timeline
 
-plot_deployment_availability_timeline(availability)
+timeline_fig, _ = plot_deployment_availability_timeline(
+    availability,
+    show=False,
+)
+timeline_fig.savefig(
+    "availability_timeline.png",
+    dpi=170,
+    bbox_inches="tight",
+)
 ```
+
+![Timeline generated from real ONC archive availability for ICLISTENHF6324](assets/figures/availability_timeline.webp){: width="100%" loading="lazy" }
 
 Each row is a deployment. Green segments have archived data; red segments are
 gaps within a deployment; blank space separates deployment windows. The
@@ -104,19 +114,30 @@ the axes so it does not obscure any interval.
 ```python
 from onc_hydrophone_data.utils import plot_availability_calendar
 
-plot_availability_calendar(availability)
+calendar_fig, _ = plot_availability_calendar(
+    availability,
+    show=False,
+)
+calendar_fig.savefig(
+    "availability_calendar.png",
+    dpi=170,
+    bbox_inches="tight",
+)
 ```
+
+![Calendar generated from real ONC archive availability for ICLISTENHF6324](assets/figures/availability_calendar.webp){: width="100%" loading="lazy" }
 
 Dark green days have high coverage, lighter green days are partial, red days
 have no data during a deployment, and grey days are outside deployment windows.
 Its legend also sits below the calendar, while the continuous coverage scale
 stays to the right.
 
-!!! info "Why there is no frozen availability screenshot"
-    Archive coverage is live, date-specific ONC data and requires an
-    authenticated query. Rather than publish invented gaps or let a screenshot
-    become stale, this page shows real deployment records and has you generate
-    the two availability plots from your own current ONC query.
+!!! info "Real archive result"
+    Both plots above were generated on 2026-07-14 by running the documented
+    query for `ICLISTENHF6324` from 2024-04-01 through 2024-07-01. ONC returned
+    91 daily bins: 72 with archived data and 19 without data, covering
+    2024-06-04 through 2024-06-22. Historical results can change if ONC
+    reprocesses its archive, so rerun the commands when current status matters.
 
 ## Carry your choice into the download
 

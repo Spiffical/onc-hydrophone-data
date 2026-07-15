@@ -324,7 +324,7 @@ def plot_deployment_availability_timeline(
 
     row_height = 0.6
     row_gap = 0.3
-    fig_height = max(2.0, len(deployments) * (row_height + row_gap) + 1.0)
+    fig_height = max(3.0, len(deployments) * (row_height + row_gap) + 1.5)
     fig, ax = plt.subplots(figsize=(12, fig_height))
 
     y_ticks = []
@@ -377,13 +377,22 @@ def plot_deployment_availability_timeline(
 
         if show_coverage and i in summary_by_idx:
             coverage = summary_by_idx[i].get('coverage_ratio', 0.0) * 100.0
-            label_x = mdates.date2num(_strip_tz(range_end or dep_end)) + 2
-            ax.text(label_x, y + row_height / 2, f"{coverage:.0f}%", va='center', fontsize=9)
+            ax.text(
+                1.01,
+                y + row_height / 2,
+                f"{coverage:.0f}%",
+                transform=ax.get_yaxis_transform(),
+                va='center',
+                fontsize=9,
+            )
 
     ax.set_yticks(y_ticks)
     ax.set_yticklabels(y_labels)
-    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
-    ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
+    locator = mdates.AutoDateLocator()
+    ax.xaxis.set_major_locator(locator)
+    ax.xaxis.set_major_formatter(
+        mdates.ConciseDateFormatter(locator, show_offset=False)
+    )
     ax.grid(axis='x', alpha=0.2)
     ax.set_ylim(-0.2, len(deployments) * (row_height + row_gap))
 
@@ -401,12 +410,12 @@ def plot_deployment_availability_timeline(
     fig.legend(
         handles=legend_items,
         loc='lower center',
-        bbox_to_anchor=(0.5, 0.02),
+        bbox_to_anchor=(0.5, 0.04),
         ncol=3,
         frameon=False,
     )
 
-    fig.tight_layout(rect=(0, 0.18, 1, 1))
+    fig.tight_layout(rect=(0, 0.2, 0.98, 1))
     if show:
         plt.show()
     return fig, ax
@@ -447,7 +456,7 @@ def plot_availability_calendar(
         return None
 
     start_date = start_dt.date()
-    end_date = end_dt.date()
+    end_date = bins[-1]['start'].date()
     week0_start = start_date - timedelta(days=start_date.weekday())
     total_days = (end_date - start_date).days
     num_weeks = ((end_date - week0_start).days // 7) + 1
@@ -517,7 +526,7 @@ def plot_availability_calendar(
     fig.legend(
         handles=legend_items,
         loc='lower center',
-        bbox_to_anchor=(0.5, 0.02),
+        bbox_to_anchor=(0.5, 0.06),
         ncol=2,
         frameon=False,
     )
@@ -532,7 +541,7 @@ def plot_availability_calendar(
     for spine in ax.spines.values():
         spine.set_visible(False)
 
-    fig.tight_layout(rect=(0, 0.2, 1, 1))
+    fig.tight_layout(rect=(0, 0.18, 1, 1))
     if show:
         plt.show()
     return fig, ax
