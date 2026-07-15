@@ -1,7 +1,11 @@
 # 3. Download Audio and Make a Spectrogram
 
 This walkthrough downloads a short ONC audio range and generates PNG and MAT
-spectrograms locally. It is the recommended first workflow for new users.
+spectrograms locally. This common workflow is presented first because many
+users want the source audio and control over their spectrogram settings. ONC's
+server-generated spectrogram products are introduced on the
+**[ONC Spectrogram Products and Server Options](onc_spectrogram_options.md)**
+page.
 
 Before continuing, complete **[Install and Configure](setup.md)** and use
 **[Find a Hydrophone](inventory.md)** to confirm that your device and dates are

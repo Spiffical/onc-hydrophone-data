@@ -1,9 +1,9 @@
 # Advanced and Batch Download Workflows
 
 This page covers server-generated spectrograms, sampling, event batches, and
-JSON/CSV request files. If this is your first ONC download, start with
-**[Download Audio and Make a Spectrogram](quickstart.md)**. For ordinary audio
-ranges, see **[Download Audio](audio_downloads.md)**.
+JSON/CSV request files. The complete **[Download Audio and Make a
+Spectrogram](quickstart.md)** example covers the common local-generation
+workflow. For ordinary audio ranges, see **[Download Audio](audio_downloads.md)**.
 
 For the differences between ONC's one-minute, plot-resolution, and
 full-resolution MAT products—plus concatenation, source, channel, diversion,
@@ -100,7 +100,16 @@ result = dl.download_audio_for_range(
 )
 ```
 
-## JSON/CSV request files
+## JSON/CSV requests for ONC products
+
+This workflow downloads audio and/or spectrogram products from ONC. With its
+default `download_spectrogram: true`, the spectrogram is computed by ONC; the
+local `SpectrogramGenerator` and its edge-context settings are not used.
+
+To use JSON timestamps to download source audio and compute your own
+spectrograms with custom FFT settings and automatic clip-boundary context, use
+[`create_custom_spectrograms_from_json()`](custom_spectrograms.md#generate-local-event-spectrograms-from-json)
+instead.
 
 ```python
 results = dl.download_requests_from_json("/path/to/requests.json")

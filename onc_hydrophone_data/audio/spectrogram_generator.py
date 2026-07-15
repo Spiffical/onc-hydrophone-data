@@ -4,6 +4,7 @@ Custom spectrogram generation from audio files.
 Translates MATLAB spectrogram functionality to Python.
 """
 
+import copy
 import os
 import json
 from datetime import datetime, timezone
@@ -548,7 +549,20 @@ class SpectrogramGenerator:
         self._last_scaling = scaling
         self._last_device = device if backend_used == 'torch' else None
 
-        # Normalize and convert to dB (following MATLAB: 10*log10(abs(P./max(P,[],'all'))))
+        if clip_meta and clip_meta.get('clip_duration_seconds') is not None:
+            offset = float(clip_meta.get('clip_offset_seconds', 0.0))
+            duration = float(clip_meta.get('clip_duration_seconds', 0.0))
+            if duration > 0:
+                end_time = offset + duration
+                keep_mask = (times >= offset) & (times <= end_time)
+                if keep_mask.any():
+                    times = times[keep_mask] - offset
+                    Sxx = Sxx[:, keep_mask]
+                elif not self.quiet:
+                    self.log.warning("Clip trimming removed all spectrogram frames; check clip window settings.")
+
+        # Normalize after time trimming so computation-only edge context cannot
+        # change the relative dB values in the retained target interval.
         max_power = np.max(Sxx)
         if max_power > 0:
             # Reuse one working array rather than allocating abs(), division,
@@ -559,19 +573,6 @@ class SpectrogramGenerator:
             power_db_norm *= 10.0
         else:
             power_db_norm = np.full_like(Sxx, -100.0)  # Very low dB value
-        
-        if clip_meta and clip_meta.get('clip_duration_seconds') is not None:
-            offset = float(clip_meta.get('clip_offset_seconds', 0.0))
-            duration = float(clip_meta.get('clip_duration_seconds', 0.0))
-            if duration > 0:
-                end_time = offset + duration
-                keep_mask = (times >= offset) & (times <= end_time)
-                if keep_mask.any():
-                    times = times[keep_mask] - offset
-                    Sxx = Sxx[:, keep_mask]
-                    power_db_norm = power_db_norm[:, keep_mask]
-                elif not self.quiet:
-                    self.log.warning("Clip trimming removed all spectrogram frames; check clip window settings.")
 
         if not self.quiet:
             self.log.info(f"Spectrogram computed: {frequencies.shape[0]} freq bins, {times.shape[0]} time frames")
@@ -668,7 +669,8 @@ class SpectrogramGenerator:
                            save_mat: bool = True,
                            save_npy: bool = False,
                            extra_metadata: Optional[dict] = None,
-                           retain_arrays: bool = True) -> dict:
+                           retain_arrays: bool = True,
+                           output_stem: Optional[str] = None) -> dict:
         """Process a single audio file and generate a spectrogram.
 
         Args:
@@ -681,6 +683,8 @@ class SpectrogramGenerator:
             extra_metadata: Optional extra metadata to store in outputs.
             retain_arrays: Keep full spectrogram arrays in the returned dict.
                 Disable this for batch jobs to release memory after each file.
+            output_stem: Optional filename stem for saved outputs. Defaults to
+                the input audio filename stem.
 
         Returns:
             Dict with file paths, arrays, and metadata. Keys include:
@@ -698,7 +702,7 @@ class SpectrogramGenerator:
                 \"example.flac\",
                 \"./out\",
                 save_mat=True,
-                save_png=False,
+                save_plot=False,
             )
             print(result[\"mat_file\"])
             ```
@@ -723,7 +727,9 @@ class SpectrogramGenerator:
         )
         
         # Create output filenames
-        base_name = audio_path.stem
+        base_name = Path(output_stem).name if output_stem else audio_path.stem
+        if not base_name or base_name in {'.', '..'}:
+            raise ValueError("output_stem must contain a valid filename stem")
         mat_path = save_dir / f"{base_name}.mat"
         png_path = save_dir / f"{base_name}.png"
         npy_path = save_dir / f"{base_name}.npy"
@@ -800,6 +806,138 @@ class SpectrogramGenerator:
                 results.pop(key, None)
         
         return results
+
+    def process_event(
+        self,
+        audio_path: Union[str, Path],
+        save_dir: Union[str, Path],
+        event_time_seconds: float,
+        *,
+        pad_before_seconds: float = 5.0,
+        pad_after_seconds: Optional[float] = None,
+        edge_padding_seconds: Union[float, str, None] = 'auto',
+        save_plot: bool = True,
+        save_mat: bool = True,
+        save_npy: bool = False,
+        extra_metadata: Optional[dict] = None,
+        retain_arrays: bool = True,
+        output_stem: Optional[str] = None,
+    ) -> dict:
+        """Generate an edge-safe spectrogram around an event in an audio file.
+
+        The retained target interval extends before and after
+        ``event_time_seconds``. Additional audio context is included only while
+        computing the STFT, then frames are trimmed back to the target interval.
+        The default ``'auto'`` context is half the resolved STFT window on each
+        side, so every retained frame has a complete analysis window.
+
+        Args:
+            audio_path: Source audio file.
+            save_dir: Directory for generated outputs.
+            event_time_seconds: Event offset from the start of the audio file.
+            pad_before_seconds: Target data retained before the event. Defaults
+                to five seconds.
+            pad_after_seconds: Target data retained after the event. Defaults to
+                ``pad_before_seconds``.
+            edge_padding_seconds: Extra computation-only context on each side.
+                Use ``'auto'`` (default) to derive half the STFT window length.
+            save_plot: Save a PNG plot.
+            save_mat: Save MATLAB output.
+            save_npy: Save NumPy output.
+            extra_metadata: Optional additional output metadata.
+            retain_arrays: Keep arrays in the returned result.
+            output_stem: Optional saved-output filename stem.
+
+        Returns:
+            The usual single-file result plus event and target-window metadata.
+        """
+        try:
+            event_time_seconds = float(event_time_seconds)
+            pad_before_seconds = float(pad_before_seconds)
+            if pad_after_seconds is None:
+                pad_after_seconds = pad_before_seconds
+            pad_after_seconds = float(pad_after_seconds)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Event time and padding values must be numeric") from exc
+
+        if not all(np.isfinite(value) for value in (
+            event_time_seconds,
+            pad_before_seconds,
+            pad_after_seconds,
+        )):
+            raise ValueError("Event time and padding values must be finite")
+        if event_time_seconds < 0:
+            raise ValueError("event_time_seconds must be >= 0")
+        if pad_before_seconds < 0 or pad_after_seconds < 0:
+            raise ValueError("Event padding values must be >= 0")
+        if pad_before_seconds + pad_after_seconds <= 0:
+            raise ValueError("At least one event padding value must be > 0")
+
+        target_start = max(0.0, event_time_seconds - pad_before_seconds)
+        target_end = event_time_seconds + pad_after_seconds
+        if target_end <= target_start:
+            raise ValueError("The event target interval is empty")
+
+        if edge_padding_seconds is not None and not (
+            isinstance(edge_padding_seconds, str)
+            and edge_padding_seconds.strip().lower() == 'auto'
+        ):
+            try:
+                explicit_edge_padding = float(edge_padding_seconds)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "edge_padding_seconds must be a non-negative float or 'auto'"
+                ) from exc
+            if not np.isfinite(explicit_edge_padding) or explicit_edge_padding < 0:
+                raise ValueError(
+                    "edge_padding_seconds must be a non-negative finite value"
+                )
+            edge_padding_seconds = explicit_edge_padding
+
+        # A shallow copy keeps the thread-safe FFT cache but isolates clip
+        # settings so this convenience method never mutates the caller's
+        # generator, including when it is reused for directory processing.
+        event_generator = copy.copy(self)
+        event_generator.clip_start = target_start
+        event_generator.clip_end = target_end
+        event_generator.clip_pad_seconds = edge_padding_seconds
+        event_generator.max_duration = None
+
+        event_metadata = {
+            **(extra_metadata or {}),
+            'event_spectrogram': {
+                'event_time_seconds': event_time_seconds,
+                'target_start_seconds': target_start,
+                'target_end_seconds': target_end,
+                'pad_before_seconds': event_time_seconds - target_start,
+                'pad_after_seconds': pad_after_seconds,
+                'edge_padding_requested': edge_padding_seconds,
+            },
+        }
+        if output_stem is None:
+            event_milliseconds = int(round(event_time_seconds * 1000.0))
+            output_stem = f"{Path(audio_path).stem}_event_{event_milliseconds}ms"
+
+        result = event_generator.process_single_file(
+            audio_path,
+            save_dir,
+            save_plot=save_plot,
+            save_mat=save_mat,
+            save_npy=save_npy,
+            extra_metadata=event_metadata,
+            retain_arrays=retain_arrays,
+            output_stem=output_stem,
+        )
+        clip_meta = result.get('metadata', {}).get('clip_meta') or {}
+        result.update({
+            'event_time_seconds': event_time_seconds,
+            'target_start_seconds': target_start,
+            'target_end_seconds': target_end,
+            'pad_before_seconds': event_time_seconds - target_start,
+            'pad_after_seconds': pad_after_seconds,
+            'edge_padding_seconds': clip_meta.get('clip_pad_seconds'),
+        })
+        return result
 
     def save_numpy_format(
         self,

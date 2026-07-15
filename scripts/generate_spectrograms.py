@@ -26,6 +26,9 @@ Usage Examples:
 
   # Process single file
   python scripts/generate_spectrograms.py --input-file audio.flac --output-dir spectrograms/
+
+  # Process an event at 123.4 seconds with edge-safe STFT context
+  python scripts/generate_spectrograms.py --input-file audio.flac --event-time 123.4
 """
 
 import os
@@ -490,6 +493,9 @@ Examples:
   
   # Single file processing
   python %(prog)s --input-file audio.flac --output-dir spectrograms/
+
+  # Event processing (five retained seconds per side; automatic edge context)
+  python %(prog)s --input-file audio.flac --event-time 123.4
   
   # MATLAB files only
   python %(prog)s --input-dir audio/ --no-plots
@@ -552,10 +558,26 @@ Examples:
                        default=None,
                        help='Clip end time in seconds (default: none)')
 
-    parser.add_argument('--clip-pad-seconds',
+    parser.add_argument('--event-time',
                        type=float,
                        default=None,
-                       help='Extra context (seconds) on each side before STFT (default: auto)')
+                       help='Event offset in a single input file, in seconds')
+
+    parser.add_argument('--event-pad-before',
+                       type=float,
+                       default=5.0,
+                       help='Target seconds retained before --event-time (default: 5)')
+
+    parser.add_argument('--event-pad-after',
+                       type=float,
+                       default=None,
+                       help='Target seconds retained after --event-time (default: same as before)')
+
+    parser.add_argument('--clip-pad-seconds', '--edge-pad-seconds',
+                       dest='clip_pad_seconds',
+                       type=float,
+                       default=None,
+                       help='Extra computation-only context on each side before STFT (default: auto half-window)')
     
     parser.add_argument('--freq-min', 
                        type=float, 
@@ -657,6 +679,11 @@ Examples:
         if not input_path_obj.exists():
             print_status(f"Input path not found: {input_path}", "ERROR")
             return
+        if args.event_time is not None:
+            if is_directory:
+                raise ValueError("--event-time requires --input-file")
+            if args.clip_start is not None or args.clip_end is not None:
+                raise ValueError("--event-time cannot be combined with --clip-start/--clip-end")
         
         # Determine output directory
         output_dir = determine_output_directory(input_path, is_directory, args.output_dir)
@@ -722,11 +749,34 @@ Examples:
         print_header("PROCESSING")
         start_time = time.time()
         
-        summary = process_audio_files(
-            input_path, output_dir, is_directory, 
-            generator, save_mat, save_plot,
-            max_workers=args.max_workers if (args.input_dir or args.input_file) else params['max_workers'],
-        )
+        if args.event_time is not None:
+            result = generator.process_event(
+                input_path,
+                output_dir,
+                event_time_seconds=args.event_time,
+                pad_before_seconds=args.event_pad_before,
+                pad_after_seconds=args.event_pad_after,
+                edge_padding_seconds=(
+                    args.clip_pad_seconds
+                    if args.clip_pad_seconds is not None
+                    else 'auto'
+                ),
+                save_mat=save_mat,
+                save_plot=save_plot,
+            )
+            summary = {
+                'total_files': 1,
+                'successful': 1,
+                'failed': 0,
+                'output_directory': str(output_dir),
+                'results': [result],
+            }
+        else:
+            summary = process_audio_files(
+                input_path, output_dir, is_directory,
+                generator, save_mat, save_plot,
+                max_workers=args.max_workers if (args.input_dir or args.input_file) else params['max_workers'],
+            )
         
         processing_time = time.time() - start_time
         
