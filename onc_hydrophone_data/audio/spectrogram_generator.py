@@ -694,6 +694,7 @@ class SpectrogramGenerator:
 
         Raises:
             FileNotFoundError: If the audio file does not exist.
+            ValueError: If ``output_stem`` is a path or includes an extension.
 
         Example:
             ```python
@@ -709,6 +710,25 @@ class SpectrogramGenerator:
         """
         audio_path = Path(audio_path)
         save_dir = Path(save_dir)
+
+        if output_stem is None:
+            base_name = audio_path.stem
+        else:
+            base_name = str(output_stem)
+            if (
+                not base_name.strip()
+                or base_name in {'.', '..'}
+                or '/' in base_name
+                or '\\' in base_name
+            ):
+                raise ValueError(
+                    "output_stem must be a filename stem, not a path"
+                )
+            if Path(base_name).suffix or base_name.endswith('.'):
+                raise ValueError(
+                    "output_stem must not include a file extension"
+                )
+
         save_dir.mkdir(parents=True, exist_ok=True)
         
         # Load audio
@@ -727,9 +747,6 @@ class SpectrogramGenerator:
         )
         
         # Create output filenames
-        base_name = Path(output_stem).name if output_stem else audio_path.stem
-        if not base_name or base_name in {'.', '..'}:
-            raise ValueError("output_stem must contain a valid filename stem")
         mat_path = save_dir / f"{base_name}.mat"
         png_path = save_dir / f"{base_name}.png"
         npy_path = save_dir / f"{base_name}.npy"

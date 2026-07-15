@@ -86,6 +86,33 @@ def test_hashable_windows_are_cached():
     assert first is second
 
 
+@pytest.mark.parametrize(
+    ("output_stem", "message"),
+    [
+        ("event.mat", "must not include a file extension"),
+        ("event.", "must not include a file extension"),
+        ("nested/event", "must be a filename stem"),
+        (r"nested\\event", "must be a filename stem"),
+    ],
+)
+def test_process_single_file_rejects_invalid_output_stems_before_loading(
+    tmp_path: Path,
+    output_stem: str,
+    message: str,
+):
+    generator = SpectrogramGenerator(quiet=True)
+    output_dir = tmp_path / "spectrograms"
+
+    with pytest.raises(ValueError, match=message):
+        generator.process_single_file(
+            tmp_path / "missing.wav",
+            output_dir,
+            output_stem=output_stem,
+        )
+
+    assert not output_dir.exists()
+
+
 def test_process_event_uses_complete_windows_and_trims_context(tmp_path: Path):
     sample_rate = 1_000
     duration_seconds = 20

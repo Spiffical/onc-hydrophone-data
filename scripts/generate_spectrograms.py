@@ -653,6 +653,29 @@ Examples:
                        help='Disable logging module output')
     
     args = parser.parse_args()
+
+    if args.event_time is not None:
+        if not args.input_file:
+            parser.error("--event-time requires --input-file")
+        if args.clip_start is not None or args.clip_end is not None:
+            parser.error(
+                "--event-time cannot be combined with --clip-start/--clip-end"
+            )
+        if args.event_time < 0:
+            parser.error("--event-time must be non-negative")
+        if args.event_pad_before < 0:
+            parser.error("--event-pad-before must be non-negative")
+        event_pad_after = (
+            args.event_pad_before
+            if args.event_pad_after is None
+            else args.event_pad_after
+        )
+        if event_pad_after < 0:
+            parser.error("--event-pad-after must be non-negative")
+        if args.event_pad_before + event_pad_after <= 0:
+            parser.error("event padding must retain more than zero seconds")
+        if args.clip_pad_seconds is not None and args.clip_pad_seconds < 0:
+            parser.error("--edge-pad-seconds must be non-negative")
     
     try:
         print_header("CUSTOM SPECTROGRAM GENERATOR")
@@ -679,12 +702,7 @@ Examples:
         if not input_path_obj.exists():
             print_status(f"Input path not found: {input_path}", "ERROR")
             return
-        if args.event_time is not None:
-            if is_directory:
-                raise ValueError("--event-time requires --input-file")
-            if args.clip_start is not None or args.clip_end is not None:
-                raise ValueError("--event-time cannot be combined with --clip-start/--clip-end")
-        
+
         # Determine output directory
         output_dir = determine_output_directory(input_path, is_directory, args.output_dir)
         print_status(f"Output directory: {output_dir}", "INFO")
