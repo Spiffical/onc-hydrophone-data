@@ -56,3 +56,35 @@ def test_event_argument_errors_use_argparse_without_traceback(
     assert f"error: {message}" in completed.stderr
     assert "Traceback" not in completed.stderr
     assert "Unexpected error" not in completed.stdout + completed.stderr
+
+
+@pytest.mark.parametrize("flag", ["--clip-pad-seconds", "--edge-pad-seconds"])
+def test_negative_clip_pad_without_event_uses_argparse_without_traceback(
+    tmp_path: Path,
+    flag: str,
+):
+    input_path = tmp_path / "audio.wav"
+    input_path.touch()
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--input-file",
+            str(input_path),
+            flag,
+            "-0.1",
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 2
+    assert (
+        "error: --clip-pad-seconds/--edge-pad-seconds must be non-negative"
+        in completed.stderr
+    )
+    assert "Traceback" not in completed.stderr
+    assert "Unexpected error" not in completed.stdout + completed.stderr
