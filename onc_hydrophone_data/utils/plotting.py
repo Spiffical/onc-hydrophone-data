@@ -449,14 +449,15 @@ def plot_availability_calendar(
         raise ValueError("plot_availability_calendar requires bin_size='day'")
 
     date_to_bin = {b['start'].date(): b for b in bins if b.get('start') is not None}
-    start_dt = availability.get('start') or bins[0]['start']
-    end_dt = availability.get('end') or bins[-1]['end']
-    if start_dt is None or end_dt is None:
+    first_bin_start = bins[0].get('start')
+    last_bin_start = bins[-1].get('start')
+    start_dt = availability.get('start') or first_bin_start
+    if start_dt is None or last_bin_start is None:
         print("Availability window is empty.")
         return None
 
     start_date = start_dt.date()
-    end_date = bins[-1]['start'].date()
+    end_date = last_bin_start.date()
     week0_start = start_date - timedelta(days=start_date.weekday())
     total_days = (end_date - start_date).days
     num_weeks = ((end_date - week0_start).days // 7) + 1

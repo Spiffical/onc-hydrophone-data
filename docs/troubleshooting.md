@@ -33,7 +33,8 @@ workflow.
 
 ## I cannot find the downloaded files
 
-Print the active paths immediately after a download:
+Print the active paths immediately after a download, using the same `dl`
+instance created in the [Download Audio](audio_downloads.md) setup block:
 
 ```python
 print("Audio:", dl.audio_path)
@@ -62,6 +63,8 @@ for long ranges. See **[Choose ONC Server Spectrograms](onc_spectrogram_options.
 Use the SciPy backend to separate backend installation from data problems:
 
 ```python
+from onc_hydrophone_data.audio import SpectrogramGenerator
+
 generator = SpectrogramGenerator(backend="scipy")
 ```
 

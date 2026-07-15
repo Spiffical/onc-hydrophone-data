@@ -17,7 +17,26 @@ Options](onc_spectrogram_options.md).
 
 ![Parallel ONC request pipeline](assets/parallel_pipeline.svg){: width="100%" }
 
+## Shared setup for the examples
+
+Run this block once before the Python examples below:
+
+```python
+from datetime import datetime, timezone
+
+from onc_hydrophone_data.data import HydrophoneDownloader
+from onc_hydrophone_data.onc.common import load_config
+
+onc_token, data_dir = load_config()
+dl = HydrophoneDownloader(onc_token, data_dir)
+
+DEVICE = "ICLISTENHF6324"
+start = datetime(2024, 4, 1, 12, 0, tzinfo=timezone.utc)
+end = datetime(2024, 4, 1, 14, 0, tzinfo=timezone.utc)
+```
+
 ## Server-generated spectrograms for a range
+
 ```python
 result = dl.download_spectrograms_for_range(
     device_code=DEVICE,
@@ -28,6 +47,7 @@ result = dl.download_spectrograms_for_range(
 ```
 
 ### Include matching audio
+
 ```python
 result = dl.download_spectrograms_for_range(
     device_code=DEVICE,
@@ -39,17 +59,22 @@ result = dl.download_spectrograms_for_range(
 ```
 
 ## Sample uniformly across a range
+
 ```python
+sample_start = datetime(2024, 4, 1, tzinfo=timezone.utc)
+sample_end = datetime(2024, 4, 8, tzinfo=timezone.utc)
+
 result = dl.download_sampled_spectrograms(
     device_code=DEVICE,
-    start_dt=start,
-    end_dt=end,
+    start_dt=sample_start,
+    end_dt=sample_end,
     total_spectrograms=24,
     spectrograms_per_request=6,
 )
 ```
 
 ## Download around event timestamps
+
 ```python
 events = [
     datetime(2024, 4, 1, 12, 5, tzinfo=timezone.utc),
@@ -76,6 +101,7 @@ result = dl.download_audio_for_range(
 ```
 
 ## JSON/CSV request files
+
 ```python
 results = dl.download_requests_from_json("/path/to/requests.json")
 results = dl.download_requests_from_csv("/path/to/requests.csv")

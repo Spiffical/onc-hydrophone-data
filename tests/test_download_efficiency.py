@@ -35,9 +35,43 @@ def test_audio_download_skips_existing_nonempty_file(tmp_path: Path):
         "2024-04-01T12:05:00Z",
     )
 
-    assert summary["files_downloaded"] == 1
+    assert summary["files_downloaded"] == 0
     assert summary["files_skipped"] == 1
+    assert summary["files_available"] == 1
+    assert summary["extension_used"] == "flac"
     onc.getFile.assert_not_called()
+    assert onc.outPath == "original"
+
+
+def test_audio_download_counts_new_files_separately(tmp_path: Path):
+    audio_dir = tmp_path / "audio"
+    audio_dir.mkdir()
+    audio_name = "DEVICE_20240401T120000.000Z.flac"
+
+    onc = MagicMock()
+    onc.outPath = "original"
+    onc.getListByDevice.return_value = {"files": [audio_name]}
+    downloader = SimpleNamespace(
+        onc=onc,
+        logger=MagicMock(),
+        audio_path=str(audio_dir),
+        max_workers=1,
+        _parse_timestamp_value=lambda value: value,
+        _build_request_windows=lambda start, end: [(start, end)],
+    )
+
+    summary = download_audio_files(
+        downloader,
+        "DEVICE",
+        "2024-04-01T12:00:00Z",
+        "2024-04-01T12:05:00Z",
+    )
+
+    assert summary["files_downloaded"] == 1
+    assert summary["files_skipped"] == 0
+    assert summary["files_available"] == 1
+    assert summary["extension_used"] == "flac"
+    onc.getFile.assert_called_once_with(audio_name, overwrite=False)
     assert onc.outPath == "original"
 
 

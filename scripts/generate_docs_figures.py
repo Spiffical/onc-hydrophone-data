@@ -28,6 +28,9 @@ from onc_hydrophone_data.utils import (
 )
 
 
+LANCZOS = getattr(getattr(Image, "Resampling", Image), "LANCZOS")
+
+
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = ROOT / "docs" / "assets" / "figures"
 ONC_AUDIO_URL = (
@@ -69,16 +72,18 @@ def _save_webp(
 ) -> None:
     """Save a compact WebP while keeping Matplotlib rendering deterministic."""
     temporary_png = OUTPUT_DIR / f".{filename}.png"
-    fig.savefig(temporary_png, dpi=170, bbox_inches=bbox_inches)
-    with Image.open(temporary_png) as image:
-        image.thumbnail((1_800, 1_200), Image.Resampling.LANCZOS)
-        image.save(
-            OUTPUT_DIR / f"{filename}.webp",
-            format="WEBP",
-            quality=84,
-            method=6,
-        )
-    temporary_png.unlink()
+    try:
+        fig.savefig(temporary_png, dpi=170, bbox_inches=bbox_inches)
+        with Image.open(temporary_png) as image:
+            image.thumbnail((1_800, 1_200), LANCZOS)
+            image.save(
+                OUTPUT_DIR / f"{filename}.webp",
+                format="WEBP",
+                quality=84,
+                method=6,
+            )
+    finally:
+        temporary_png.unlink(missing_ok=True)
 
 
 def _download_onc_audio(destination: Path) -> None:
@@ -87,8 +92,34 @@ def _download_onc_audio(destination: Path) -> None:
         ONC_AUDIO_URL,
         headers={"User-Agent": "onc-hydrophone-data documentation figure generator"},
     )
-    with urlopen(request, timeout=60) as response, destination.open("wb") as output:
-        shutil.copyfileobj(response, output)
+    partial_destination = destination.with_suffix(f"{destination.suffix}.part")
+    try:
+        with urlopen(request, timeout=60) as response:
+            status = getattr(response, "status", None)
+            if status is not None and not 200 <= status < 300:
+                raise RuntimeError(
+                    f"ONC audio preview returned HTTP status {status}"
+                )
+
+            content_type = response.headers.get_content_type().lower()
+            if not (
+                content_type.startswith("audio/")
+                or content_type == "application/octet-stream"
+            ):
+                raise RuntimeError(
+                    "ONC audio preview returned unexpected content type "
+                    f"{content_type!r}; expected audio"
+                )
+
+            with partial_destination.open("wb") as output:
+                shutil.copyfileobj(response, output)
+
+        if partial_destination.stat().st_size == 0:
+            raise RuntimeError("ONC audio preview returned an empty response")
+        partial_destination.replace(destination)
+    except Exception:
+        partial_destination.unlink(missing_ok=True)
+        raise
 
 
 def generate_deployment_figures() -> None:
@@ -251,23 +282,25 @@ def generate_spectrogram_figures(audio_path: Path) -> None:
         sample_rate,
     )
     temporary_spectrogram = OUTPUT_DIR / ".example_local_spectrogram.png"
-    fig = generator.plot_spectrogram(
-        frequencies,
-        times,
-        power_db,
-        title="Humpback whale calls — Folger Passage — 2012-08-01 12:24 UTC",
-        save_path=temporary_spectrogram,
-    )
-    plt.close(fig)
-    with Image.open(temporary_spectrogram) as image:
-        image.thumbnail((1_800, 1_200), Image.Resampling.LANCZOS)
-        image.save(
-            OUTPUT_DIR / "example_local_spectrogram.webp",
-            format="WEBP",
-            quality=84,
-            method=6,
+    try:
+        fig = generator.plot_spectrogram(
+            frequencies,
+            times,
+            power_db,
+            title="Humpback whale calls — Folger Passage — 2012-08-01 12:24 UTC",
+            save_path=temporary_spectrogram,
         )
-    temporary_spectrogram.unlink()
+        plt.close(fig)
+        with Image.open(temporary_spectrogram) as image:
+            image.thumbnail((1_800, 1_200), LANCZOS)
+            image.save(
+                OUTPUT_DIR / "example_local_spectrogram.webp",
+                format="WEBP",
+                quality=84,
+                method=6,
+            )
+    finally:
+        temporary_spectrogram.unlink(missing_ok=True)
 
     comparisons = []
     for window_seconds in (0.032, 0.5):

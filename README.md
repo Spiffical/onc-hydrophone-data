@@ -48,29 +48,45 @@ DATA_DIR=./data
 
 ## 🚀 Quick Start
 
-**📓 [Tutorial Notebook](notebooks/ONC_Data_Download_Tutorial.ipynb)** - The best way to get started with interactive examples.
+For the guided beginner path, start with the
+**[online documentation](https://spiffical.github.io/onc-hydrophone-data/)**.
+An extended [tutorial notebook](notebooks/ONC_Data_Download_Tutorial.ipynb) is
+also available for interactive exploration.
 
 ### Python API
 
 ```python
-from onc_hydrophone_data.onc.common import load_config
-from onc_hydrophone_data.data import HydrophoneDownloader
+from datetime import datetime, timezone
+from pathlib import Path
+
 from onc_hydrophone_data.audio import SpectrogramGenerator
+from onc_hydrophone_data.data import HydrophoneDownloader
+from onc_hydrophone_data.onc.common import load_config
 
-# Load credentials from .env file
 onc_token, data_dir = load_config()
-
-# Download spectrograms using intelligent sampling
 downloader = HydrophoneDownloader(onc_token, data_dir)
-downloader.download_spectrograms_with_sampling_schedule(
-    deviceCode="ICLISTENHF6020",
-    start_date=(2021, 1, 1),
-    threshold_num=100
+
+# Download a short, verified ONC audio range.
+downloader.download_audio_for_range(
+    device_code="ICLISTENHF6324",
+    start_dt=datetime(2024, 4, 1, 12, 0, tzinfo=timezone.utc),
+    end_dt=datetime(2024, 4, 1, 12, 10, tzinfo=timezone.utc),
 )
 
-# Generate custom spectrograms from audio files
-generator = SpectrogramGenerator(win_dur=2.0, overlap=0.75)
-generator.process_directory("data/DEVICE/audio/", "output/spectrograms/")
+# Generate PNG and MAT spectrograms locally from the downloaded audio.
+audio_dir = Path(downloader.audio_path)
+generator = SpectrogramGenerator(
+    win_dur=0.5,
+    overlap=0.75,
+    freq_lims=(20, 10_000),
+    crop_freq_lims=True,
+)
+generator.process_directory(
+    audio_dir,
+    audio_dir.parent / "custom_spectrograms",
+    save_plot=True,
+    save_mat=True,
+)
 ```
 
 ### Command Line
@@ -81,11 +97,11 @@ python scripts/download_hydrophone_data.py
 
 # Download spectrograms with specific parameters
 python scripts/download_hydrophone_data.py --mode sampling \
-    --device ICLISTENHF6020 --start-date 2021 1 1 --threshold 500
+    --device ICLISTENHF6324 --start-date 2024 4 1 --threshold 500
 
 # Include FLAC audio files
 python scripts/download_hydrophone_data.py --mode sampling \
-    --device ICLISTENHF6020 --start-date 2021 1 1 --threshold 100 --download-audio
+    --device ICLISTENHF6324 --start-date 2024 4 1 --threshold 100 --download-audio
 
 # Generate custom spectrograms
 python scripts/generate_spectrograms.py --input-dir data/DEVICE/audio/ --win-dur 2.0
@@ -126,8 +142,8 @@ Downloads are organized in a clean, flat structure:
 
 ```
 data/
-└── ICLISTENHF6020/
-    └── sampling_2021-01-01_to_2021-01-31/
+└── ICLISTENHF6324/
+    └── audio_range_2024-04-01_to_2024-04-01/
         ├── onc_spectrograms/     # ONC-downloaded spectrograms (MAT/PNG)
         │   ├── *.mat             # Spectrogram data files
         │   └── anomaly_report.txt # Any validation issues (if found)
