@@ -48,7 +48,7 @@ DATA_DIR=./data
 
 ## 🚀 Quick Start
 
-For the guided beginner path, start with the
+For a guided introduction to both workflows, start with the
 **[online documentation](https://spiffical.github.io/onc-hydrophone-data/)**.
 An extended [tutorial notebook](notebooks/ONC_Data_Download_Tutorial.ipynb) is
 also available for interactive exploration.
@@ -132,6 +132,7 @@ plot_availability_calendar(availability)
 - **Parallel ONC Requests**: Submits many requests at once so ONC processes them in parallel, then downloads when ready (faster than sequential requests)
 - **Resumable Audio Downloads**: Downloads FLAC/WAV files in parallel and skips files already present locally
 - **Custom Spectrograms**: Generate spectrograms with configurable parameters
+- **Event-Centred Spectrograms**: Retain a precise signal window while using automatic STFT context to prevent edge effects
 - **Deployment Validation**: Ensures data exists for requested time periods
 - **Deployment Availability Visuals**: Timeline/calendar views of data availability by device
 - **Interactive Mode**: Guided CLI for easy setup

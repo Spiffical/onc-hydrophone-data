@@ -84,3 +84,126 @@ def test_hashable_windows_are_cached():
     first = generator._resolve_window(321)
     second = generator._resolve_window(321)
     assert first is second
+
+
+def test_process_event_uses_complete_windows_and_trims_context(tmp_path: Path):
+    sample_rate = 1_000
+    duration_seconds = 20
+    time_axis = np.arange(sample_rate * duration_seconds) / sample_rate
+    signal = (
+        np.sin(2 * np.pi * 80 * time_axis)
+        + 0.4 * np.sin(2 * np.pi * 180 * time_axis)
+    )
+    # A much stronger signal outside the target interval verifies that extra
+    # computation context is excluded before relative-dB normalization.
+    signal[(time_axis >= 14.0) & (time_axis < 15.0)] *= 20.0
+    audio_path = tmp_path / "events.wav"
+    sf.write(audio_path, signal, sample_rate, subtype="FLOAT")
+
+    generator = SpectrogramGenerator(
+        win_dur=2.0,
+        overlap=0.5,
+        backend="scipy",
+        quiet=True,
+    )
+    loaded_audio, loaded_rate, _ = generator.load_audio(audio_path)
+    _, full_times, full_power, _ = generator.compute_spectrogram(
+        loaded_audio,
+        loaded_rate,
+    )
+
+    result = generator.process_event(
+        audio_path,
+        tmp_path / "spectrograms",
+        event_time_seconds=10.0,
+        pad_before_seconds=3.0,
+        pad_after_seconds=3.0,
+        save_plot=False,
+        save_mat=False,
+    )
+
+    target_mask = (full_times >= 7.0) & (full_times <= 13.0)
+    np.testing.assert_allclose(
+        result["times"],
+        full_times[target_mask] - 7.0,
+    )
+    np.testing.assert_allclose(
+        result["power_spectrogram"],
+        full_power[:, target_mask],
+        rtol=1e-6,
+        atol=1e-12,
+    )
+    assert result["duration"] == pytest.approx(6.0)
+    assert result["edge_padding_seconds"] == pytest.approx(1.0)
+    assert result["target_start_seconds"] == pytest.approx(7.0)
+    assert result["target_end_seconds"] == pytest.approx(13.0)
+    assert generator.clip_start is None
+    assert generator.clip_end is None
+
+    wider_context_result = generator.process_event(
+        audio_path,
+        tmp_path / "spectrograms",
+        event_time_seconds=10.0,
+        pad_before_seconds=3.0,
+        pad_after_seconds=3.0,
+        edge_padding_seconds=2.0,
+        save_plot=False,
+        save_mat=False,
+    )
+    assert np.max(wider_context_result["power_db_norm"]) == pytest.approx(0.0)
+
+    default_result = generator.process_event(
+        audio_path,
+        tmp_path / "spectrograms",
+        event_time_seconds=10.0,
+        save_plot=False,
+    )
+    assert default_result["target_start_seconds"] == pytest.approx(5.0)
+    assert default_result["target_end_seconds"] == pytest.approx(15.0)
+    assert default_result["pad_before_seconds"] == pytest.approx(5.0)
+    assert default_result["pad_after_seconds"] == pytest.approx(5.0)
+    assert default_result["edge_padding_seconds"] == pytest.approx(1.0)
+    assert Path(default_result["mat_file"]).name == "events_event_10000ms.mat"
+    event_metadata = default_result["metadata"]["extra_metadata"]["event_spectrogram"]
+    assert event_metadata["event_time_seconds"] == pytest.approx(10.0)
+    assert event_metadata["edge_padding_requested"] == "auto"
+
+
+@pytest.mark.parametrize(
+    ("event_time", "pad_before", "pad_after", "message"),
+    [
+        (-1.0, 5.0, 5.0, "event_time_seconds"),
+        (10.0, -1.0, 5.0, "padding values"),
+        (10.0, 0.0, 0.0, "At least one"),
+        (float("nan"), 5.0, 5.0, "finite"),
+    ],
+)
+def test_process_event_validates_window(
+    tmp_path: Path,
+    event_time: float,
+    pad_before: float,
+    pad_after: float,
+    message: str,
+):
+    generator = SpectrogramGenerator(quiet=True)
+
+    with pytest.raises(ValueError, match=message):
+        generator.process_event(
+            tmp_path / "missing.wav",
+            tmp_path,
+            event_time_seconds=event_time,
+            pad_before_seconds=pad_before,
+            pad_after_seconds=pad_after,
+        )
+
+
+def test_process_event_rejects_negative_edge_padding_before_loading(tmp_path: Path):
+    generator = SpectrogramGenerator(quiet=True)
+
+    with pytest.raises(ValueError, match="edge_padding_seconds"):
+        generator.process_event(
+            tmp_path / "missing.wav",
+            tmp_path,
+            event_time_seconds=10.0,
+            edge_padding_seconds=-0.1,
+        )

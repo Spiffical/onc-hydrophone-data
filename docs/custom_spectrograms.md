@@ -7,6 +7,22 @@ If you have not downloaded audio yet, start with
 **[Download Audio](audio_downloads.md)** or the complete
 **[audio-to-spectrogram walkthrough](quickstart.md)**.
 
+## Choose the local workflow
+
+| Workflow | What it does | Clip-boundary handling |
+| --- | --- | --- |
+| `process_single_file()` / `process_directory()` | Computes a spectrogram from a complete local audio file | Uses only complete STFT windows; it does not add artificial samples beyond the file |
+| `clip_start` / `clip_end` or `--clip-start` / `--clip-end` | Computes a selected interval from local audio | Uses automatic half-window context by default, then removes it |
+| `process_event()` | Computes around a known time in one local audio file | Automatically reads an extra half-window on each side, then removes that context |
+| `--event-time` command-line mode | Command-line form of `process_event()` | Same automatic half-window context and trimming |
+| `create_custom_spectrograms_from_json()` | Downloads ONC audio for timestamped events and computes spectrograms locally | Automatically downloads extra context, computes the STFT, and trims back to the requested interval |
+| `download_requests_from_json()` | Downloads spectrogram products computed by ONC | Processing at product boundaries is controlled by ONC |
+
+Use `create_custom_spectrograms_from_json()` when you want the FFT and plotting
+settings in the JSON file to control newly computed local spectrograms. Use
+`download_requests_from_json()` when you want ONC's existing or
+server-generated spectrogram products.
+
 ## Process an audio directory
 
 ```python
@@ -110,7 +126,44 @@ python scripts/generate_spectrograms.py \
 
 Run `python scripts/generate_spectrograms.py --help` for every option.
 
-## Generate event clips from JSON
+## Generate around a known signal time
+
+Use event mode when a signal occurs at a known offset in an existing audio
+file. The default retains five seconds before and after the event. It also reads
+an extra half-window of audio on each side while computing the STFT, then keeps
+only frames centred inside the requested ten-second interval. This ensures that
+every retained time bin is calculated from a complete analysis window.
+
+```python
+result = generator.process_event(
+    audio_dir / "example.flac",
+    output_dir,
+    event_time_seconds=123.4,
+    pad_before_seconds=5,
+    pad_after_seconds=5,
+    edge_padding_seconds="auto",
+    save_plot=True,
+    save_mat=True,
+)
+```
+
+`edge_padding_seconds="auto"` is the default and resolves to half the actual
+STFT window after the audio sample rate and any `win_length` override are known.
+The resolved value, event time, target interval, and retained padding are stored
+in the output metadata.
+
+The same mode is available from the command line:
+
+```bash
+python scripts/generate_spectrograms.py \
+    --input-file audio/example.flac \
+    --event-time 123.4 \
+    --event-pad-before 5 \
+    --event-pad-after 5 \
+    --output-dir spectrograms
+```
+
+## Generate local event spectrograms from JSON
 
 For many labeled events, one workflow can download the needed audio context,
 clip each event, and generate local spectrograms:
@@ -124,6 +177,7 @@ dl = HydrophoneDownloader(onc_token, data_dir)
 
 results = dl.create_custom_spectrograms_from_json(
     "custom_requests.json",
+    clip_pad_seconds="auto",
     save_mat=True,
     save_png=True,
 )
@@ -154,7 +208,17 @@ results = dl.create_custom_spectrograms_from_json(
 ```
 
 The workflow requests adjacent source files when padding crosses a five-minute
-boundary and trims the generated result back to the target interval.
+boundary. With `clip_pad_seconds="auto"`, it adds half of the configured
+`win_dur` on both sides before computing the STFT, removes that context before
+relative-dB normalization, and returns only time bins centred inside the
+requested event interval. This prevents incomplete-window artifacts at the
+requested clip boundaries. If `generator_options` sets a sample-based
+`win_length` that differs from `win_dur`, set `clip_pad_seconds` explicitly in
+seconds so the download context matches that window.
+
+This edge handling applies to spectrograms computed locally by this package.
+Spectrograms returned by `download_requests_from_json()` or the other ONC
+spectrogram download methods are computed by ONC and follow ONC's processing.
 
 ## Understand the saved values
 

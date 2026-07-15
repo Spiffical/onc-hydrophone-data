@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 sys.modules['onc'] = MagicMock()
 sys.modules['onc.onc'] = MagicMock()
 
-from onc_hydrophone_data.data.hydrophone_downloader import (
+from onc_hydrophone_data.data import (
     HydrophoneDownloader,
     TimestampRequest,
     ensure_timezone_aware,
