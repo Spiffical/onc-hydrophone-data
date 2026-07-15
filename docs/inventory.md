@@ -103,8 +103,9 @@ timeline_fig.savefig(
 ![Timeline generated from real ONC archive availability for ICLISTENHF6324](assets/figures/availability_timeline.webp){: width="100%" loading="lazy" }
 
 The availability result distinguishes archived data, gaps during a deployment,
-and dates when the device was not deployed. Coverage is calculated from the
-fraction of expected files present in each daily bin.
+and dates when the device was not deployed. Coverage is the duration for which
+merged archived audio intervals overlap each daily bin, divided by the bin's
+total duration.
 
 ### Calendar view
 
@@ -124,9 +125,9 @@ calendar_fig.savefig(
 
 ![Calendar generated from real ONC archive availability for ICLISTENHF6324](assets/figures/availability_calendar.webp){: width="100%" loading="lazy" }
 
-Each calendar value is the fraction of expected files found for that day. A
-zero value within a deployment is an archive gap; dates outside a deployment
-are recorded separately rather than treated as missing data.
+Each calendar value is the fraction of that day covered by archived audio time
+intervals. A zero value within a deployment is an archive gap; dates outside a
+deployment are recorded separately rather than treated as missing data.
 
 !!! info "Real archive result"
     Both plots above were generated on 2026-07-14 by running the documented
