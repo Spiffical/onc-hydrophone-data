@@ -72,3 +72,12 @@ def test_calendar_legend_does_not_cover_plot() -> None:
         _assert_legend_is_below_plot(fig, ax)
     finally:
         plt.close(fig)
+
+
+def test_calendar_excludes_the_query_end_boundary() -> None:
+    fig, ax = plot_availability_calendar(_daily_availability(), show=False)
+    try:
+        calendar_grid = ax.images[0].get_array()
+        assert calendar_grid.shape[:2] == (7, 2)
+    finally:
+        plt.close(fig)

@@ -20,6 +20,12 @@ from matplotlib.patches import Patch
 from PIL import Image
 
 from onc_hydrophone_data.audio import SpectrogramGenerator
+from onc_hydrophone_data.data.deployment_checker import HydrophoneDeploymentChecker
+from onc_hydrophone_data.onc.common import load_config
+from onc_hydrophone_data.utils import (
+    plot_availability_calendar,
+    plot_deployment_availability_timeline,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,7 +35,8 @@ ONC_AUDIO_URL = (
     "&dg=7d61cb4a58b0b01cefa32614d1e047b94914327f"
 )
 ONC_INVENTORY_SOURCE = (
-    "https://wiki.oceannetworks.ca/pages/viewpage.action?pageId=72548654"
+    "https://wiki.oceannetworks.ca/spaces/O2KB/pages/72548584/"
+    "ONC+Hydrophone+Location+Codes+Data+Types"
 )
 ONC_INVENTORY_SNAPSHOT = datetime(2026, 7, 14)
 
@@ -48,6 +55,10 @@ ENDEAVOUR_DEPLOYMENT_HISTORY = [
     ("ICLISTENHF6328", "KEMFH.H3", "2023-09-08T22:56:13", None, True),
     ("ICLISTENHF6329", "KEMFH.H4", "2023-09-08T22:56:13", None, True),
 ]
+
+AVAILABILITY_DEVICE = "ICLISTENHF6324"
+AVAILABILITY_START = "2024-04-01"
+AVAILABILITY_END = "2024-07-01"
 
 
 def _save_webp(
@@ -188,6 +199,42 @@ def generate_deployment_figures() -> None:
     plt.close(fig)
 
 
+def generate_availability_figures() -> None:
+    """Query ONC and render the exact availability example used in the docs."""
+    onc_token, _ = load_config()
+    checker = HydrophoneDeploymentChecker(onc_token)
+    availability = checker.get_device_availability(
+        AVAILABILITY_DEVICE,
+        start_date=AVAILABILITY_START,
+        end_date=AVAILABILITY_END,
+        timezone_str="UTC",
+        bin_size="day",
+        quiet=True,
+        max_workers=4,
+    )
+
+    timeline = plot_deployment_availability_timeline(availability, show=False)
+    if timeline:
+        fig, _ = timeline
+        _save_webp(fig, "availability_timeline")
+        plt.close(fig)
+
+    calendar = plot_availability_calendar(availability, show=False)
+    if calendar:
+        fig, _ = calendar
+        _save_webp(fig, "availability_calendar")
+        plt.close(fig)
+
+    days_with_data = sum(
+        (entry.get("coverage") or 0) > 0 for entry in availability["bins"]
+    )
+    print(
+        "Generated authenticated availability figures for "
+        f"{AVAILABILITY_DEVICE}: {days_with_data}/{len(availability['bins'])} "
+        "daily bins contain archived data"
+    )
+
+
 def generate_spectrogram_figures(audio_path: Path) -> None:
     generator = SpectrogramGenerator(
         win_dur=0.128,
@@ -285,15 +332,22 @@ def main() -> None:
             "downloading the public ONC preview"
         ),
     )
+    parser.add_argument(
+        "--with-live-availability",
+        action="store_true",
+        help=(
+            "Query ONC using ONC_TOKEN from .env and regenerate the real "
+            "availability timeline and calendar"
+        ),
+    )
     args = parser.parse_args()
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     for obsolete_png in OUTPUT_DIR.glob("*.png"):
         obsolete_png.unlink()
-    obsolete_calendar = OUTPUT_DIR / "availability_calendar.webp"
-    if obsolete_calendar.exists():
-        obsolete_calendar.unlink()
     generate_deployment_figures()
+    if args.with_live_availability:
+        generate_availability_figures()
     if args.audio_file:
         generate_spectrogram_figures(args.audio_file)
     else:
