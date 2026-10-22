@@ -7,6 +7,7 @@ Translates MATLAB spectrogram functionality to Python.
 import copy
 import os
 import json
+import re
 from datetime import datetime, timezone
 import numpy as np
 import scipy.io
@@ -724,7 +725,12 @@ class SpectrogramGenerator:
                 raise ValueError(
                     "output_stem must be a filename stem, not a path"
                 )
-            if Path(base_name).suffix or base_name.endswith('.'):
+            # ONC timestamps such as "20240401T120000.000Z" contain a dot, so
+            # only reject suffixes that look like file extensions (".mat").
+            if (
+                base_name.endswith('.')
+                or re.fullmatch(r'\.[A-Za-z][A-Za-z0-9]*', Path(base_name).suffix)
+            ):
                 raise ValueError(
                     "output_stem must not include a file extension"
                 )

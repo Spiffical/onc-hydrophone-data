@@ -4,13 +4,15 @@ Script to download spectrograms from Ocean Networks Canada (ONC) using the Hydro
 
 This script provides multiple download modes with automatic interactive prompting for missing parameters:
 
-1. Sampling schedule mode: Downloads spectrograms based on a sampling schedule within a date range
-2. Specific times mode: Downloads spectrograms for specific timestamps (requires config file)
-3. Date range mode: Downloads all available spectrograms in a date range
-4. Check deployments mode: Show available deployments for planning downloads
+1. Overview mode: List every hydrophone with its location codes and deployment periods
+2. Sampling schedule mode: Downloads spectrograms based on a sampling schedule within a date range
+3. Specific times mode: Downloads spectrograms for specific timestamps (requires config file)
+4. Date range mode: Downloads all available spectrograms in a date range
+5. Check deployments mode: Show available deployments for planning downloads
 
 The script automatically becomes interactive when required parameters are missing, making it easy to use
 for both beginners (who can be guided through the process) and power users (who can specify all parameters).
+When every required parameter is given, it runs without prompting.
 
 Key Features:
 - Automatic deployment checking and validation
@@ -22,6 +24,9 @@ Key Features:
 - Timestamp JSON ingestion with optional spectrogram/audio clipping
 
 Usage Examples:
+
+  # List hydrophones and their deployments (add --current-only for those deployed now)
+  python download_hydrophone_data.py --mode overview --current-only
 
   # Fully specified (non-interactive)
   python download_hydrophone_data.py --mode sampling --device ICLISTENHF6020 --start-date 2020 10 2 --threshold 1000
@@ -46,10 +51,11 @@ import argparse
 import json
 import warnings
 import glob
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 
 # Add the utils directory to the path so we can import the HydrophoneDownloader
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from onc_hydrophone_data.data.deployment_checker import HydrophoneDeploymentChecker
 from onc_hydrophone_data.data.hydrophone_downloader import HydrophoneDownloader
 from onc_hydrophone_data.onc.common import load_config, print_status
 from onc_hydrophone_data.utils.download_helpers import (
@@ -374,58 +380,81 @@ def download_specific_times(args, downloader):
 
 
 def download_date_range(args, downloader):
-    """Download spectrograms for a date range (simplified approach)"""
+    """Download every five-minute spectrogram from the start date through the end date"""
     print_header("DATE RANGE MODE")
-    
+
+    # The end date is inclusive: download through the end of that UTC day.
+    start_dt = datetime(*args.start_date, tzinfo=timezone.utc)
+    end_dt = datetime(*args.end_date, tzinfo=timezone.utc) + timedelta(days=1)
+    num_days = (end_dt - start_dt).days
+    window_count = int((end_dt - start_dt).total_seconds() // 300)
+
     print_status(f"Device Code: {args.device}")
     print_status(f"Start Date: {'-'.join(map(str, args.start_date))}")
-    print_status(f"End Date: {'-'.join(map(str, args.end_date))}")
+    print_status(f"End Date: {'-'.join(map(str, args.end_date))} (inclusive, UTC)")
     print_status(f"File Type: {args.filetype.upper()}")
-    
-    # Calculate number of days between start and end date
-    start_date_obj = date(*args.start_date)
-    end_date_obj = date(*args.end_date)
-    num_days = (end_date_obj - start_date_obj).days + 1
-    
-    print_status(f"Date Range: {num_days} days")
-    
-    # Use a high threshold to get all available data
-    threshold = 10000
-    print_status(f"Maximum Files: {threshold} (will download all available)")
-    
+    print_status(f"Date Range: {num_days} days ({window_count} five-minute spectrograms)")
+
     if args.check_deployments:
         print_status("Deployment Checking: ENABLED", "SUCCESS")
-        if args.auto_select_deployment:
-            print_status("Auto-select Deployment: ENABLED", "SUCCESS")
     else:
         print_status("Deployment Checking: DISABLED", "WARNING")
-    
+
     if args.download_audio:
         print_status("Audio Download: ENABLED", "SUCCESS")
     else:
         print_status("Audio Download: DISABLED", "INFO")
-    
-    print_section("Starting Download Process")
-    
-    # Set up directories for date range mode
-    print_status("Setting up directories...", "PROGRESS")
-    downloader.downloader.setup_directories(args.filetype, args.device, 'date_range', args.start_date, args.end_date, args.spectrograms_per_batch)
-    
-    try:
-        if args.check_deployments:
-            downloader._download_with_deployment_check(
-                args.device, args.start_date, threshold, num_days, 
-                args.filetype, args.auto_select_deployment, args.spectrograms_per_batch, download_audio=args.download_audio
+
+    if args.check_deployments:
+        print_section("Checking Deployments")
+        has_coverage, deployments = downloader.downloader.validate_deployment_coverage(
+            args.device, start_dt, end_dt
+        )
+        if not deployments:
+            print_status(f"No deployment of {args.device} overlaps this date range", "ERROR")
+            print_status("Run --mode overview to see deployment periods", "INFO")
+            return
+        for deployment in deployments:
+            end_str = deployment.end_date.strftime('%Y-%m-%d') if deployment.end_date else 'ongoing'
+            print_status(
+                f"Deployment: {deployment.begin_date.strftime('%Y-%m-%d')} to {end_str} at {deployment.location_name}",
+                "SUCCESS",
             )
+        if not has_coverage:
+            print_status("Deployments cover only part of this range; days outside them will have no files", "WARNING")
+
+    print_section("Starting Download Process")
+
+    try:
+        if args.filetype == 'mat':
+            result = downloader.downloader.download_spectrograms_for_range(
+                args.device,
+                start_dt,
+                end_dt,
+                args.spectrograms_per_batch,
+                download_audio=args.download_audio,
+            )
+            print(json.dumps(result, indent=2, default=str))
         else:
-            # Use the internal sampling method but with date_range directory
-            downloader.downloader.download_spectrograms_with_sampling_schedule(
-                args.device, args.start_date, threshold, num_days=num_days, filetype=args.filetype, download_audio=args.download_audio
+            # ONC archives pre-generated PNG plots, so list and download them in one request.
+            downloader.downloader.setup_directories('png', args.device, 'date_range', start_dt, end_dt)
+            downloader.downloader.download_MAT_or_PNG(
+                args.device,
+                start_dt,
+                filetype='png',
+                spectrograms_per_batch=window_count,
+                download_audio=args.download_audio,
             )
     except Exception as e:
         if "restricted" in str(e).lower():
             print_status("Some data may be restricted. Check ONC permissions if downloads fail.", "WARNING")
         raise
+
+
+def overview_mode(args, onc_token):
+    """Print every hydrophone, or only those deployed now, with locations and deployment periods"""
+    checker = HydrophoneDeploymentChecker(onc_token, debug=args.verbose)
+    checker.print_hydrophone_overview(current_only=args.current_only)
 
 
 def check_deployments_mode(args, downloader):
@@ -480,7 +509,7 @@ def create_example_config():
                 "label": "long ship pass"
             },
             {
-                "deviceCode": "ICLISTENHF6020",
+                "deviceCode": "ICLISTENHF1332",
                 "timestamp": [2024, 4, 2, 3, 15, 0],
                 "clip": False,
                 "spectrogram_format": "png",
@@ -510,6 +539,10 @@ Examples:
   # Interactive mode (recommended for beginners)
   python %(prog)s
   
+  # List every hydrophone deployment, or only hydrophones deployed now
+  python %(prog)s --mode overview
+  python %(prog)s --mode overview --current-only
+  
   # Sampling mode with all parameters
   python %(prog)s --mode sampling --device ICLISTENHF6020 --start-date 2020 10 2 --threshold 1000 --check-deployments
   
@@ -522,9 +555,9 @@ Examples:
   # Check deployments
   python %(prog)s --mode check-deployments --device ICLISTENHF6020 --start-date 2020 10 2 --end-date 2020 10 5
 
-  # Custom duration examples
-  python %(prog)s --mode sampling --device ICLISTENHF6020 --start-date 2020 10 2 --threshold 100 --spectrograms-per-batch 600  # 10 minutes
-  python %(prog)s --mode specific --config my_times.json --spectrograms-per-batch 1800  # 30 minutes
+  # Request size: each spectrogram covers 5 minutes
+  python %(prog)s --mode sampling --device ICLISTENHF6020 --start-date 2020 10 2 --threshold 100 --spectrograms-per-batch 2  # 10 minutes per request
+  python %(prog)s --mode range --device ICLISTENHF6020 --start-date 2020 10 2 --end-date 2020 10 5 --spectrograms-per-batch 12  # 1 hour per request
   
   # Download with audio files
   python %(prog)s --mode sampling --device ICLISTENHF6020 --start-date 2020 10 2 --threshold 50 --download-audio
@@ -536,10 +569,14 @@ Examples:
     )
     
     # Global options
-    parser.add_argument('--mode', 
-                        choices=['sampling', 'range', 'specific', 'check-deployments'], 
+    parser.add_argument('--mode',
+                        choices=['overview', 'sampling', 'range', 'specific', 'check-deployments'],
                         default='sampling',
-                        help='Download mode (default: sampling)')
+                        help='Download mode, or "overview" to list hydrophones and deployments (default: sampling)')
+
+    parser.add_argument('--current-only',
+                        action='store_true',
+                        help='With --mode overview, list only hydrophones deployed now')
     
     parser.add_argument('--device', 
                         help='Device code (e.g., ICLISTENHF6020). Will prompt if not provided.')
@@ -567,7 +604,7 @@ Examples:
     
     parser.add_argument('--auto-select-deployment', 
                         action='store_true',
-                        help='Auto-select best deployment for multiple options')
+                        help='No effect; kept for compatibility. Deployment checks use every overlapping deployment')
     
     parser.add_argument('--verbose', 
                         action='store_true',
@@ -635,15 +672,23 @@ Examples:
                         help='Create example configuration file for specific times mode')
     
     args = parser.parse_args()
-    
+
     # Handle --create-example-config
     if args.create_example_config:
         create_example_config()
         return
-    
+
+    if args.current_only and args.mode != 'overview':
+        parser.error("--current-only requires --mode overview")
+    if args.mode == 'specific' and not args.config:
+        parser.error("--mode specific requires --config FILE (create one with --create-example-config)")
+
     try:
         # Load configuration and setup
         onc_token, data_dir = load_config(data_dir_override=args.data_dir)
+        if args.mode == 'overview':
+            overview_mode(args, onc_token)
+            return
         downloader = VerboseHydrophoneDownloader(onc_token, data_dir, verbose=args.verbose)
         
         print_header("ONC SPECTROGRAM DOWNLOADER")
@@ -685,7 +730,17 @@ def collect_missing_parameters(args, downloader):
     :return: Updated args with collected parameters
     """
     print_section("Parameter Collection")
-    
+
+    # Optional settings are only prompted for while guiding the user through
+    # missing required values, so a fully specified command runs unattended.
+    required = {
+        'sampling': ('device', 'start_date', 'threshold'),
+        'range': ('device', 'start_date', 'end_date'),
+        'check-deployments': ('device', 'start_date', 'end_date'),
+        'specific': ('config',),
+    }
+    guided = any(getattr(args, name) is None for name in required.get(args.mode, ()))
+
     # Collect device if missing (except for specific mode which uses config)
     if args.mode != 'specific' and not args.device:
         args.device = prompt_for_device(downloader)
@@ -702,7 +757,7 @@ def collect_missing_parameters(args, downloader):
                 sys.exit(1)
         
         # For interactive usage, ask for end date for all modes to define the time range
-        if not args.end_date:
+        if not args.end_date and guided:
             if args.mode == 'sampling':
                 print_status("For sampling mode, you can specify an end date to limit the sampling period", "INFO")
             
@@ -726,7 +781,7 @@ def collect_missing_parameters(args, downloader):
             sys.exit(1)
     
     # Ask about audio downloads if not specified (skip for check-deployments mode)
-    if args.mode != 'check-deployments' and not hasattr(args, 'download_audio_prompted'):
+    if guided and args.mode != 'check-deployments' and not hasattr(args, 'download_audio_prompted'):
         # Only prompt if download_audio wasn't explicitly set via command line
         if not args.download_audio:
             args.download_audio = prompt_for_audio()

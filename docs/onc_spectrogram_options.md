@@ -28,6 +28,12 @@ offer only a subset of the values listed here.
 | Preserve the highest server-produced resolution | MAT with `dpo_spectralDataDownsample=0` | Slowest and largest | Usually 0.5 seconds or better in time and roughly 1 Hz frequency bins, depending on the hydrophone and calibration. |
 | Work with low-bandwidth or diversion-period spectral files | FFT source or `.fft` files, where available | Device-dependent | Lower resolution than audio-sourced spectra but sometimes available when audio is not; may span a wider frequency range. |
 
+!!! important "One minute is the time resolution, not the file duration"
+    In the one-minute MAT product, each time column is an ensemble average of
+    one minute of spectral data. A request can cover many minutes, hours, or
+    days. For example, a one-hour concatenated file normally contains 60
+    consecutive one-minute columns; it is not limited to one minute of data.
+
 !!! important "Package default versus ONC default"
     ONC's default MAT option is the pre-generated one-minute product
     (`dpo_spectralDataDownsample=1`). `HydrophoneDownloader` currently defaults
@@ -43,7 +49,7 @@ defines three MAT resolutions:
 
 | Value | ONC name | What ONC returns | Concatenation |
 | --- | --- | --- | --- |
-| `1` | One-minute | Pre-generated one-minute ensemble averages. ONC averages in linear/pressure units and converts back to dB. Frequency bins may also be reduced. | `Concatenate`, `Daily`, or `None` |
+| `1` | One-minute temporal resolution | Each time column is a pre-generated one-minute ensemble average. The requested duration can be much longer than one minute. ONC averages in linear/pressure units and converts back to dB. Frequency bins may also be reduced. | `Concatenate`, `Daily`, or `None` |
 | `2` | Spectrogram resolution | The spectral values used at approximately the useful resolution of ONC's PNG/PDF plot. ONC notes these files are commonly around one tenth the size of full resolution. | One MAT file per source audio file (`None`) |
 | `0` | Full resolution | Resolution determined by the hydrophone sample rate and calibration. | One MAT file per source audio file (`None`) |
 
@@ -69,7 +75,7 @@ DEVICE = "ICLISTENHF6324"
 start = datetime(2024, 4, 1, 12, 0, tzinfo=timezone.utc)
 end = datetime(2024, 4, 1, 14, 0, tzinfo=timezone.utc)
 
-# Use ONC's compact, pre-generated one-minute MAT product by default.
+# Use ONC's compact MAT product with one-minute time columns by default.
 dl = HydrophoneDownloader(
     ONC_TOKEN,
     DATA_DIR,
@@ -80,7 +86,7 @@ dl = HydrophoneDownloader(
 Or override the ONC data-product options for one workflow:
 
 ```python
-# Fast, compact one-minute MAT data.
+# Request two hours of data represented by one-minute time columns.
 one_minute = dl.download_spectrograms_for_range(
     device_code=DEVICE,
     start_dt=start,
@@ -117,6 +123,11 @@ full_resolution = dl.download_spectrograms_for_range(
 )
 ```
 
+Here, `start` and `end` define a two-hour duration. With
+`spectrograms_per_batch=12`, the package submits one-hour batches of twelve
+five-minute source windows. Each concatenated batch normally contains 60
+one-minute columns when the archive has complete coverage.
+
 ## Concatenation and collation
 
 The official [ONC spectrogram concatenation
@@ -126,8 +137,8 @@ describes how source files can be grouped:
 | Value | Formats | Behaviour |
 | --- | --- | --- |
 | `None` | MAT, PNG, PDF | One output for each compatible source audio/FFT file. This package uses `None` by default so five-minute windows stay separate. |
-| `Concatenate` | One-minute MAT | Combines compatible data until ONC's file-size or frequency-compatibility limit is reached. This is ONC's default for MAT. |
-| `Daily` | One-minute MAT, PNG, PDF | Produces daily output. Spectral data is assembled into one-minute non-overlapping averages. |
+| `Concatenate` | One-minute-resolution MAT | Combines consecutive one-minute columns until ONC's file-size or frequency-compatibility limit is reached. This is ONC's default for MAT. |
+| `Daily` | One-minute-resolution MAT, PNG, PDF | Produces daily output. A complete MAT day contains 1,440 non-overlapping one-minute columns. |
 | `Weekly` | PNG, PDF | Produces weekly plots; the official HSD page describes five-minute averages for weekly plot data. |
 | `Adjacent` | PNG, PDF | For a search of five minutes or less, joins adjacent source audio files and calculates one plot covering the requested interval. |
 

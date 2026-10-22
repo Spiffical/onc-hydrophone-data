@@ -196,6 +196,24 @@ def test_process_event_uses_complete_windows_and_trims_context(tmp_path: Path):
     assert event_metadata["edge_padding_requested"] == "auto"
 
 
+def test_process_event_accepts_onc_audio_filenames(tmp_path: Path):
+    # ONC archive names contain a fractional-second timestamp ("...000.000Z").
+    sample_rate = 1_000
+    time_axis = np.arange(sample_rate * 20) / sample_rate
+    audio_path = tmp_path / "ICLISTENHF6324_20240401T120000.000Z.wav"
+    sf.write(audio_path, np.sin(2 * np.pi * 80 * time_axis), sample_rate, subtype="FLOAT")
+    generator = SpectrogramGenerator(win_dur=1.0, backend="scipy", quiet=True)
+
+    result = generator.process_event(
+        audio_path,
+        tmp_path / "spectrograms",
+        event_time_seconds=10.0,
+        save_plot=False,
+    )
+
+    assert Path(result["mat_file"]).name == "ICLISTENHF6324_20240401T120000.000Z_event_10000ms.mat"
+
+
 @pytest.mark.parametrize(
     ("event_time", "pad_before", "pad_after", "message"),
     [
