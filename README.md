@@ -55,6 +55,40 @@ For a guided introduction to both workflows, start with the
 An extended [tutorial notebook](notebooks/ONC_Data_Download_Tutorial.ipynb) is
 also available for interactive exploration.
 
+### Find a hydrophone
+
+List every hydrophone with its location code, location, deployment period,
+depth, and coordinates. Pass `current_only=True` to see only the hydrophones
+deployed right now:
+
+```python
+from onc_hydrophone_data.data.deployment_checker import HydrophoneDeploymentChecker
+from onc_hydrophone_data.onc.common import load_config
+
+onc_token, data_dir = load_config()
+checker = HydrophoneDeploymentChecker(onc_token)
+
+checker.print_hydrophone_overview(current_only=True)  # deployed now
+checker.print_hydrophone_overview()                   # every deployment, past and present
+
+# The same rows as a pandas DataFrame, for filtering or saving.
+overview = checker.get_hydrophone_overview()
+overview.to_csv("onc_hydrophone_deployments.csv", index=False)
+```
+
+```text
+36 hydrophones deployed now at 16 sites (as of 2026-10-22 21:56 UTC)
+
+Location code  Device code                 Begin       End      Depth (m)  Latitude  Longitude  Location
+-------------  --------------------------  ----------  -------  ---------  --------  ---------  ----------------------------------------------------------
+...
+KEMFH.H1       ICLISTENHF6324              2023-09-08  ongoing       2195   47.9493  -129.0982  Main Endeavour Field (Hydrophone A)
+...
+```
+
+Pass the device code to the download methods and choose times between its
+begin and end dates.
+
 ### Common workflow: download audio and generate spectrograms locally
 
 ```python
@@ -112,7 +146,9 @@ print(result)
 
 See the [ONC spectrogram products and server options
 guide](https://spiffical.github.io/onc-hydrophone-data/onc_spectrogram_options/)
-for one-minute, plot-resolution, and full-resolution products.
+for one-minute, plot-resolution, and full-resolution products. In the
+one-minute product, one minute is the temporal resolution of each spectral
+column—not the total duration of the request or output file.
 
 ### Generate around a known signal time
 
@@ -139,20 +175,32 @@ print(event_result["png_file"])
 
 ### Command Line
 
+The command-line scripts are in the repository's `scripts/` directory, so run
+them from a clone:
+
 ```bash
+# List hydrophones deployed now (omit --current-only to include past deployments)
+python scripts/download_hydrophone_data.py --mode overview --current-only
+
 # Interactive mode (guided setup - recommended)
 python scripts/download_hydrophone_data.py
 
-# Download spectrograms with specific parameters
+# Download 500 spectrograms sampled from 2024-04-01 to 2024-04-30
 python scripts/download_hydrophone_data.py --mode sampling \
-    --device ICLISTENHF6324 --start-date 2024 4 1 --threshold 500
+    --device ICLISTENHF6324 --start-date 2024 4 1 --end-date 2024 4 30 --threshold 500
 
-# Include FLAC audio files
+# Include FLAC audio files and check the dates against deployments first
 python scripts/download_hydrophone_data.py --mode sampling \
-    --device ICLISTENHF6324 --start-date 2024 4 1 --threshold 100 --download-audio
+    --device ICLISTENHF6324 --start-date 2024 4 1 --end-date 2024 4 30 --threshold 100 \
+    --download-audio --check-deployments
 
-# Generate custom spectrograms
-python scripts/generate_spectrograms.py --input-dir data/DEVICE/audio/ --win-dur 2.0
+# Download every five-minute spectrogram from 2024-04-01 through 2024-04-02
+python scripts/download_hydrophone_data.py --mode range \
+    --device ICLISTENHF6324 --start-date 2024 4 1 --end-date 2024 4 2
+
+# Generate custom spectrograms from downloaded audio
+python scripts/generate_spectrograms.py \
+    --input-dir data/ICLISTENHF6324/audio_range_2024-04-01_to_2024-04-01/audio --win-dur 2.0
 
 # Generate around a known signal time with automatic edge context
 python scripts/generate_spectrograms.py --input-file audio/example.flac \
@@ -160,27 +208,38 @@ python scripts/generate_spectrograms.py --input-file audio/example.flac \
     --output-dir event_spectrograms/
 
 # Save only the frequency range needed by the dashboard (much smaller MAT files)
-python scripts/generate_spectrograms.py --input-dir data/DEVICE/audio/ \
+python scripts/generate_spectrograms.py \
+    --input-dir data/ICLISTENHF6324/audio_range_2024-04-01_to_2024-04-01/audio \
     --freq-min 10 --freq-max 10000 --crop-freq-lims
 ```
+
+Commands that include every required option run without prompting; leave
+options out to be guided through them. Run either script with `--help` for all
+options.
 
 ### Deployment Availability Visualization
 
 ```python
-from onc_hydrophone_data.data.deployment_checker import HydrophoneDeploymentChecker
 from onc_hydrophone_data.utils import (
     plot_deployment_availability_timeline,
     plot_availability_calendar,
 )
 
-checker = HydrophoneDeploymentChecker(onc_token)
-availability = checker.get_device_availability("ICLISTENHF6324", bin_size="day")
+# Reuses `checker` from "Find a hydrophone". Keep the date range modest:
+# availability queries list every archived file in the range.
+availability = checker.get_device_availability(
+    "ICLISTENHF6324",
+    start_date="2024-04-01",
+    end_date="2024-07-01",
+    bin_size="day",
+)
 plot_deployment_availability_timeline(availability)
 plot_availability_calendar(availability)
 ```
 
 ## ✨ Features
 
+- **Hydrophone Overview**: Lists every hydrophone with its location code, location, deployment period, depth, and coordinates, or only those deployed now
 - **Smart Sampling**: Intelligently distributes downloads across date ranges
 - **Parallel ONC Requests**: Submits many requests at once so ONC processes them in parallel, then downloads when ready (faster than sequential requests)
 - **Resumable Audio Downloads**: Downloads FLAC/WAV files in parallel and skips files already present locally
@@ -214,7 +273,7 @@ data/
 | Issue | Solution |
 |-------|----------|
 | Invalid ONC Token | Verify token in `.env` file |
-| No data found | Use `--check-deployments` to verify coverage |
+| No data found | Run `print_hydrophone_overview()` (or `--mode overview`) and request times inside a deployment; add `--check-deployments` to CLI downloads |
 | ONC request timeouts | Reduce `--spectrograms-per-batch` or request a shorter range |
 | Local generation is slow or uses too much memory | Use `--max-workers 1` and `--crop-freq-lims` with a focused frequency range |
 
@@ -222,6 +281,7 @@ data/
 
 Docs site: **https://spiffical.github.io/onc-hydrophone-data/**  
 See the **[Tutorial Notebook](notebooks/ONC_Data_Download_Tutorial.ipynb)** for comprehensive examples including:
+- Finding hydrophones, their locations, and deployment dates
 - Different download modes (sampling, range, specific times)
 - Parallel download optimization
 - Custom spectrogram generation

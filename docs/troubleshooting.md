@@ -1,8 +1,9 @@
 # Troubleshooting
 
 Start with the symptom below. When reporting a problem, include the package
-version, operating system, device code, requested UTC range, and full traceback
-— but never include your ONC token or `.env` file.
+version (`pip show onc-hydrophone-data`), operating system, device code,
+requested UTC range, and full traceback — but never include your ONC token or
+`.env` file.
 
 ## `Please set your ONC_TOKEN`
 
@@ -23,13 +24,36 @@ print(data_dir)
 ## The request returns no audio files
 
 1. Check the device code for spelling and case.
-2. Confirm the dates fall inside a deployment.
+2. Confirm the dates fall inside one of the device's deployments.
+   `checker.print_hydrophone_overview()` lists every deployment period.
 3. Plot archive availability for that range.
 4. Use timezone-aware UTC datetimes.
 5. Try a ten-minute range known to be green in the availability plot.
 
-See **[Find a Hydrophone](inventory.md)** for the inventory and availability
+See **[Find a Hydrophone](inventory.md)** for the overview and availability
 workflow.
+
+## ONC prints a "data restricted" notice during a download
+
+ONC's API can attach notices about related products to a file listing. A notice
+that "Hydrophone Spectral Data 2.0" (`HSD2`) PNG data are restricted refers to
+that ONC product, not to the audio or HSD files this package requests. If the
+FLAC/WAV or MAT files arrive, the download worked. Request access through the
+linked form only if you need that restricted product.
+
+## The command-line script keeps asking questions
+
+`scripts/download_hydrophone_data.py` prompts only for required values you left
+out, plus optional settings while it is guiding you. Give every required option
+to run it without prompts, for example:
+
+```bash
+python scripts/download_hydrophone_data.py --mode range \
+    --device ICLISTENHF6324 --start-date 2024 4 1 --end-date 2024 4 2
+```
+
+Sampling mode needs `--device`, `--start-date`, and `--threshold`; range and
+check-deployments modes need `--device`, `--start-date`, and `--end-date`.
 
 ## I cannot find the downloaded files
 

@@ -1,4 +1,3 @@
-import time
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -19,72 +18,66 @@ def download_spectrograms_with_deployment_check(
     download_flac: Optional[bool] = None,
 ):
     """
-    Download spectrograms with deployment checking enabled.
-    
+    Check deployment coverage, then download a sampled set of spectrograms.
+
+    The sampling period starts at ``start_date`` and spans ``num_days`` days
+    (default: through today). Nothing is downloaded when no deployment of the
+    device overlaps that period.
+
     :param deviceCode: ONC device code
-    :param start_date: Start date for sampling
+    :param start_date: Start date for sampling, as ``(year, month, day)`` or a date/datetime
     :param threshold_num: Number of samples to take
     :param num_days: Number of days to sample (optional)
     :param filetype: Type of file to download ('png' or 'mat')
-    :param auto_select_deployment: Whether to automatically select the best deployment
+    :param auto_select_deployment: Kept for backward compatibility; sampling
+        draws from every deployment that overlaps the period
     :param spectrograms_per_batch: Number of 5-minute spectrograms to download per batch
     :param download_audio: Whether to download corresponding audio files (FLAC/WAV fallback)
+    :return: True if the period overlaps a deployment and sampling ran, otherwise False
     """
     self.logger.info(f"Starting deployment-aware download for {deviceCode}")
     self.logger.info(f"Batch size: {spectrograms_per_batch} spectrograms per request")
     download_audio = _resolve_download_audio(download_audio, download_flac)
-    
-    # Get deployment information
-    deployment_info = self.deployment_checker.get_deployment_info(deviceCode)
-    if not deployment_info:
-        self.logger.error(f"Could not get deployment information for {deviceCode}")
-        return
 
-    # Generate sampling schedule
-    sampling_schedule = self.deployment_checker.generate_sampling_schedule(
-        deployment_info, 
-        start_date, 
-        threshold_num, 
-        num_days
+    if isinstance(start_date, (list, tuple)):
+        start_date = tuple(start_date[:3])
+    else:
+        start_date = (start_date.year, start_date.month, start_date.day)
+    period_start = datetime(*start_date, tzinfo=timezone.utc)
+    if num_days is None:
+        period_end = datetime.now(timezone.utc)
+    else:
+        period_end = period_start + timedelta(days=num_days)
+
+    has_coverage, deployments = self.validate_deployment_coverage(deviceCode, period_start, period_end)
+    period = f"{period_start.strftime('%Y-%m-%d')} to {period_end.strftime('%Y-%m-%d')}"
+    if not deployments:
+        print(f"❌ No deployment of {deviceCode} overlaps {period}")
+        device_deployments = [dep for dep in self._get_cached_deployments() if dep.device_code == deviceCode]
+        if device_deployments:
+            print("\nAvailable deployment periods:")
+            for deployment in device_deployments:
+                end_str = deployment.end_date.strftime('%Y-%m-%d') if deployment.end_date else 'ongoing'
+                print(f"  • {deployment.begin_date.strftime('%Y-%m-%d')} to {end_str} at {deployment.location_name}")
+        return False
+
+    for deployment in deployments:
+        end_str = deployment.end_date.strftime('%Y-%m-%d') if deployment.end_date else 'ongoing'
+        print(f"✅ Using deployment: {deployment.begin_date.strftime('%Y-%m-%d')} to {end_str} at {deployment.location_name}")
+    if not has_coverage:
+        print(f"⚠️ Deployments cover only part of {period}; sampling uses days with archived data")
+
+    self.download_spectrograms_with_sampling_schedule(
+        deviceCode,
+        start_date,
+        threshold_num,
+        num_days=num_days,
+        filetype=filetype,
+        spectrograms_per_batch=spectrograms_per_batch,
+        download_audio=download_audio,
     )
-    
-    if not sampling_schedule:
-        self.logger.error("Failed to generate sampling schedule")
-        return
-
-    # Calculate duration for directory setup
-    duration_seconds = (spectrograms_per_batch * 300) - 1
-
-    # Set up directories for the download
-    self.setup_directories(deviceCode, filetype, start_date, sampling_schedule[-1], duration_seconds)
-
-    # Download files for each time slot with deployment checking
-    total_slots = len(sampling_schedule)
-    self.logger.info(f"Starting download of {total_slots} time slots with deployment checking")
-    
-    for i, time_slot in enumerate(sampling_schedule, 1):
-        slot_start = time.time()
-        self.logger.info(f"Processing slot {i}/{total_slots}: {time_slot}")
-        
-        # Download with deployment check
-        success, deployment = self.download_with_deployment_check(
-            deviceCode,
-            time_slot,
-            filetype,
-            spectrograms_per_batch,
-            auto_select_deployment,
-            download_audio=download_audio,
-        )
-        
-        if success:
-            self.logger.info(f"Successfully downloaded slot {i}/{total_slots}")
-        else:
-            self.logger.warning(f"Failed to download slot {i}/{total_slots}")
-        
-        self.logger.info(f"Completed slot {i}/{total_slots} in {time.time() - slot_start:.2f}s")
-        self.logger.info(f"Overall progress: {i}/{total_slots} slots completed")
-    
     self.logger.info("Deployment-aware download completed")
+    return True
 
 
 def download_with_deployment_check(

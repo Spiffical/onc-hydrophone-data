@@ -10,6 +10,10 @@ full-resolution MAT products—plus concatenation, source, channel, diversion,
 PNG/PDF, and server-generation options—see [ONC Spectrogram Products and Server
 Options](onc_spectrogram_options.md).
 
+Here, **one-minute means one-minute temporal resolution**, not a one-minute
+download limit. Longer requests contain consecutive one-minute spectral
+columns.
+
 !!! note
     The downloader submits multiple ONC requests **in parallel** and then
     downloads results as they become ready. ONC handles the parallel processing
@@ -86,6 +90,10 @@ result = dl.download_spectrograms_for_events(
     spectrograms_per_request=6,
 )
 ```
+
+Each timestamp is mapped to the five-minute window that contains it. Adjacent
+windows are combined into requests of up to `spectrograms_per_request` windows;
+separate events become separate requests.
 
 ## Audio-only range
 

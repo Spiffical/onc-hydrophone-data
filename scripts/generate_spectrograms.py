@@ -19,7 +19,8 @@ Usage Examples:
   python scripts/generate_spectrograms.py
 
   # Process a specific directory
-  python scripts/generate_spectrograms.py --input-dir data/ICLISTENHF6020/flac/ --output-dir data/ICLISTENHF6020/custom_spectrograms/
+  python scripts/generate_spectrograms.py --input-dir data/ICLISTENHF6324/audio_range_2024-04-01_to_2024-04-01/audio/ \
+      --output-dir data/ICLISTENHF6324/audio_range_2024-04-01_to_2024-04-01/custom_spectrograms/
 
   # Custom parameters
   python scripts/generate_spectrograms.py --input-dir audio/ --win-dur 2.0 --overlap 0.75 --freq-min 5 --freq-max 20000
@@ -486,7 +487,7 @@ Examples:
   python %(prog)s
   
   # Process directory with default settings
-  python %(prog)s --input-dir data/ICLISTENHF6020/flac/
+  python %(prog)s --input-dir data/ICLISTENHF6324/audio_range_2024-04-01_to_2024-04-01/audio/
   
   # Custom parameters
   python %(prog)s --input-dir audio/ --win-dur 2.0 --overlap 0.75 --freq-min 5 --freq-max 20000

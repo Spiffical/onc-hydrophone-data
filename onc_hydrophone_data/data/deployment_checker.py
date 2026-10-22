@@ -11,7 +11,7 @@ import logging
 import time
 from datetime import datetime, timezone, timedelta
 from collections import defaultdict
-from typing import Dict, List, Tuple, Any, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Tuple, Any, Optional, Union
 import concurrent.futures
 from dataclasses import dataclass
 from .location_mappings import (
@@ -33,6 +33,9 @@ try:
 except ImportError:
     raise ImportError("ERROR: 'onc-python' library not found. Please install it: pip install onc-python")
 
+if TYPE_CHECKING:
+    import pandas as pd
+
 
 @dataclass
 class DeploymentInfo:
@@ -51,6 +54,101 @@ class DeploymentInfo:
     position_name: Optional[str] = None
     location_path: Optional[Tuple[str, ...]] = None
     has_data: bool = False
+    device_name: Optional[str] = None
+
+
+# Columns returned by HydrophoneDeploymentChecker.get_hydrophone_overview().
+HYDROPHONE_OVERVIEW_COLUMNS = (
+    'device_code',
+    'device_name',
+    'device_id',
+    'location_code',
+    'location_name',
+    'position_name',
+    'location_path',
+    'begin_date',
+    'end_date',
+    'currently_deployed',
+    'depth_m',
+    'latitude',
+    'longitude',
+    'doi',
+)
+
+
+def _is_hydrophone_node(name: Optional[str]) -> bool:
+    """Return True for location-tree nodes named after hydrophones, not sites."""
+    return 'hydrophone' in (name or '').lower()
+
+
+def _is_missing(value: Any) -> bool:
+    """Return True for None and pandas/NumPy missing values (NaN, NaT, NA)."""
+    if value is None:
+        return True
+    try:
+        # NaN and NaT are the only values unequal to themselves.
+        return bool(value != value)
+    except TypeError:
+        # pandas.NA has no truth value.
+        return True
+
+
+def _count(number: int, noun: str) -> str:
+    return f"{number} {noun}" if number == 1 else f"{number} {noun}s"
+
+
+def _citation_doi(citation: Any) -> Optional[str]:
+    if isinstance(citation, dict):
+        return citation.get('doi') or None
+    return None
+
+
+def _format_hydrophone_overview_table(rows: List[Dict[str, Any]]) -> str:
+    """Format overview rows as an aligned plain-text table.
+
+    The free-text location column comes last so long names never push the
+    other columns out of alignment.
+    """
+    def fmt_date(value: Any) -> str:
+        return 'ongoing' if _is_missing(value) else value.strftime('%Y-%m-%d')
+
+    def fmt_number(value: Any, digits: int) -> str:
+        return '' if _is_missing(value) else f"{value:.{digits}f}"
+
+    def fmt_location(row: Dict[str, Any]) -> str:
+        name = row.get('location_name')
+        name = '' if _is_missing(name) else name
+        position = row.get('position_name')
+        return name if _is_missing(position) or not position else f"{name} ({position})"
+
+    columns = [
+        ('Location code', lambda row: row.get('location_code') or '', '<'),
+        ('Device code', lambda row: row.get('device_code') or '', '<'),
+        ('Begin', lambda row: fmt_date(row.get('begin_date')), '<'),
+        ('End', lambda row: fmt_date(row.get('end_date')), '<'),
+        ('Depth (m)', lambda row: fmt_number(row.get('depth_m'), 0), '>'),
+        ('Latitude', lambda row: fmt_number(row.get('latitude'), 4), '>'),
+        ('Longitude', lambda row: fmt_number(row.get('longitude'), 4), '>'),
+        ('Location', fmt_location, '<'),
+    ]
+    cells = [[render(row) for _, render, _ in columns] for row in rows]
+    widths = [
+        max([len(title)] + [len(row_cells[i]) for row_cells in cells])
+        for i, (title, _, _) in enumerate(columns)
+    ]
+
+    def fmt_line(values: List[str]) -> str:
+        return '  '.join(
+            f"{value:{align}{width}}"
+            for value, width, (_, _, align) in zip(values, widths, columns)
+        ).rstrip()
+
+    lines = [
+        fmt_line([title for title, _, _ in columns]),
+        fmt_line(['-' * width for width in widths]),
+    ]
+    lines.extend(fmt_line(row_cells) for row_cells in cells)
+    return '\n'.join(lines)
 
 
 class HydrophoneDeploymentChecker:
@@ -83,6 +181,7 @@ class HydrophoneDeploymentChecker:
         self._location_paths_built = False
         self._deployments_cache = None
         self._deployments_cache_at = None
+        self._hydrophone_devices: List[Dict[str, Any]] = []
         self._archive_cache = {}
         self._device_deployments_cache = {}
         self._device_deployments_cache_at = {}
@@ -100,7 +199,7 @@ class HydrophoneDeploymentChecker:
             List of ``DeploymentInfo`` objects for all deployments, including
             location metadata (name/code, lat/lon, depth) and deployment dates.
         """
-        logging.info("Fetching hydrophone devices from ONC...")
+        logging.debug("Fetching hydrophone devices from ONC...")
         
         # Get all hydrophone devices
         hydrophones = self.onc.getDevices({"deviceCategoryCode": "HYDROPHONE"})
@@ -110,13 +209,17 @@ class HydrophoneDeploymentChecker:
         if not hydrophones:
             raise ValueError("No hydrophone devices found")
         
-        logging.info(f"Found {len(hydrophones)} hydrophone device(s)")
+        logging.debug(f"Found {len(hydrophones)} hydrophone device(s)")
+        self._hydrophone_devices = hydrophones
         
         # Get location information for mapping
         self._build_location_cache()
         
-        # Get deployments for all hydrophones in parallel
-        all_deployments = self._get_deployments_parallel(hydrophones)
+        # One category-wide request returns every hydrophone deployment; fall
+        # back to one request per device if ONC rejects it.
+        all_deployments = self._get_category_deployments(hydrophones)
+        if all_deployments is None:
+            all_deployments = self._get_deployments_parallel(hydrophones)
         
         # Convert to DeploymentInfo objects
         deployment_infos = []
@@ -130,7 +233,7 @@ class HydrophoneDeploymentChecker:
                     logging.warning(f"Error parsing deployment: {e}")
                 continue
         
-        logging.info(f"Found {len(deployment_infos)} valid deployment(s)")
+        logging.debug(f"Found {len(deployment_infos)} valid deployment(s)")
         return deployment_infos
     
     def find_deployments_by_time_range(self, 
@@ -295,6 +398,95 @@ class HydrophoneDeploymentChecker:
                     print(f"     Location: {dep.latitude:.4f}°N, {dep.longitude:.4f}°W")
                 print()
 
+    def get_hydrophone_overview(self, *, current_only: bool = False) -> "pd.DataFrame":
+        """
+        Tabulate every ONC hydrophone deployment, or only the current ones.
+
+        Each row is one deployment: one device installed at one location for
+        one period. Rows are sorted by location code, then begin date, so the
+        devices that have occupied a site appear together in order.
+
+        Args:
+            current_only: If True, keep only deployments that are in progress
+                now (started, and with no end date or an end date in the future).
+
+        Returns:
+            A pandas DataFrame with the columns ``device_code``,
+            ``device_name``, ``device_id``, ``location_code``,
+            ``location_name``, ``position_name`` (array element, if any),
+            ``location_path``, ``begin_date`` and ``end_date`` (UTC;
+            ``end_date`` is ``NaT`` while deployed), ``currently_deployed``,
+            ``depth_m``, ``latitude``, ``longitude``, and ``doi`` (the
+            deployment's data citation DOI).
+        """
+        import pandas as pd
+
+        now = datetime.now(timezone.utc)
+        rows: List[Dict[str, Any]] = []
+        for dep in self._get_cached_deployments():
+            begin = ensure_timezone_aware(dep.begin_date)
+            end = ensure_timezone_aware(dep.end_date) if dep.end_date else None
+            currently_deployed = begin <= now and (end is None or end > now)
+            if current_only and not currently_deployed:
+                continue
+            rows.append({
+                'device_code': dep.device_code,
+                'device_name': dep.device_name,
+                'device_id': dep.device_id,
+                'location_code': dep.location_code,
+                'location_name': dep.location_name,
+                'position_name': dep.position_name,
+                'location_path': " > ".join(dep.location_path) if dep.location_path else None,
+                'begin_date': begin,
+                'end_date': end,
+                'currently_deployed': currently_deployed,
+                'depth_m': dep.depth,
+                'latitude': dep.latitude,
+                'longitude': dep.longitude,
+                'doi': _citation_doi(dep.citation),
+            })
+        rows.sort(key=lambda row: (row['location_code'] or '', row['begin_date'], row['device_code']))
+        return pd.DataFrame(rows, columns=list(HYDROPHONE_OVERVIEW_COLUMNS))
+
+    def print_hydrophone_overview(self, *, current_only: bool = False) -> None:
+        """
+        Print every ONC hydrophone with its location and deployment period.
+
+        Prints one line per deployment: location code, device code, begin and
+        end dates (UTC; ``ongoing`` when ONC lists no end date), depth,
+        coordinates, and the location name with the array position, if any.
+        Pass the device code to the download methods and choose times between
+        its begin and end dates. Use ``get_hydrophone_overview`` to get the
+        same rows as a pandas DataFrame.
+
+        Args:
+            current_only: If True, list only hydrophones deployed right now.
+        """
+        overview = self.get_hydrophone_overview(current_only=current_only)
+        as_of = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+        sites = _count(overview['location_name'].nunique(), 'site')
+        if current_only:
+            print(f"{_count(len(overview), 'hydrophone')} deployed now at {sites} (as of {as_of})")
+        else:
+            print(
+                f"{_count(len(overview), 'deployment')} of "
+                f"{_count(overview['device_code'].nunique(), 'hydrophone')} at {sites}; "
+                f"{int(overview['currently_deployed'].sum())} deployed now (as of {as_of})"
+            )
+        if overview.empty:
+            return
+        print()
+        print(_format_hydrophone_overview_table(overview.to_dict('records')))
+        print()
+        print("Dates are UTC. 'ongoing' means ONC lists no end date.")
+        deployed_codes = set(overview['device_code'])
+        undeployed = [
+            device for device in self._hydrophone_devices
+            if isinstance(device, dict) and device.get('deviceCode') not in deployed_codes
+        ]
+        if undeployed and not current_only:
+            print(f"Not listed: {_count(len(undeployed), 'registered hydrophone')} with no deployment records.")
+
     def collect_hydrophone_inventory(
         self,
         *,
@@ -303,9 +495,13 @@ class HydrophoneDeploymentChecker:
         """
         Collect hydrophone deployment inventory with current and history views.
 
+        For a printed table of the same deployments, use
+        ``print_hydrophone_overview``.
+
         Args:
-            include_inactive: If True, include inactive devices in the
-                per‑device summaries when building the inventory.
+            include_inactive: Has no effect; kept for backward compatibility.
+                The ``current`` view always lists only active deployments, and
+                the ``history`` view lists every deployment.
 
         Returns:
             Dict with ``current`` and ``history`` lists of records.
@@ -993,6 +1189,32 @@ class HydrophoneDeploymentChecker:
         self._device_deployments_cache_at[device_code] = now
         return parsed
     
+    def _get_category_deployments(self, hydrophones: List[Dict]) -> Optional[List[Dict]]:
+        """Fetch every hydrophone deployment in one request (None if ONC refuses)."""
+        try:
+            deployments = self.onc.getDeployments({"deviceCategoryCode": "HYDROPHONE"})
+        except Exception as exc:
+            logging.debug(f"Category deployment query failed; querying each device instead: {exc}")
+            return None
+        if not isinstance(deployments, list):
+            return None
+
+        # Add device info to each deployment, as the per-device path does
+        devices_by_code = {
+            device.get("deviceCode"): device
+            for device in hydrophones
+            if isinstance(device, dict)
+        }
+        merged = []
+        for dep in deployments:
+            if not isinstance(dep, dict):
+                continue
+            device = devices_by_code.get(dep.get("deviceCode"))
+            if device:
+                dep.update(device)
+            merged.append(dep)
+        return merged
+
     def _get_deployments_parallel(self, hydrophones: List[Dict], max_workers: int = 10) -> List[Dict]:
         """Fetch deployments for multiple hydrophones in parallel."""
         def fetch_device_deployments(device: Dict) -> List[Dict]:
@@ -1087,7 +1309,8 @@ class HydrophoneDeploymentChecker:
                 depth=float(depth) if depth else None,
                 citation=citation,
                 position_name=position_name,
-                location_path=path or None
+                location_path=path or None,
+                device_name=deployment_dict.get('deviceName'),
             )
         except Exception as e:
             if self.debug:
@@ -1142,27 +1365,22 @@ class HydrophoneDeploymentChecker:
     def _resolve_display_location(self, leaf_name: str, path: Tuple[str, ...]) -> Tuple[str, Optional[str]]:
         """
         Decide which human-friendly location name to show.
-        For array elements where the leaf is \"Hydrophone A/B/C...\", prefer the parent site name.
+
+        Hydrophone positions and their containers are named after the instrument
+        (e.g. "Hydrophone A" inside "Hydrophone Array - Box Type", or "JASCO
+        Hydrophone 1"). For those, return the nearest ancestor that names a site
+        as the location and the leaf as the position.
         """
-        position_name = None
-        if path:
-            leaf = path[-1]
-            parent = path[-2] if len(path) > 1 else ''
-            grandparent = path[-3] if len(path) > 2 else ''
-        else:
-            leaf = leaf_name
-            parent = ''
-            grandparent = ''
-        
-        # Identify hydrophone array leaf nodes
-        if leaf and leaf.lower().startswith("hydrophone"):
-            position_name = leaf
-            # Prefer the site above the array container (grandparent) if available
-            display_name = grandparent or parent or leaf
-        else:
-            display_name = leaf or parent or leaf_name
-        
-        return display_name, position_name
+        names = [(name or '').strip() for name in (path or [leaf_name])]
+        leaf = names[-1] or (leaf_name or '').strip()
+        if not _is_hydrophone_node(leaf):
+            return leaf, None
+
+        site = next(
+            (name for name in reversed(names[:-1]) if name and not _is_hydrophone_node(name)),
+            None,
+        )
+        return site or leaf, leaf
     
     def _check_product_availability_parallel(self, device_codes: List[str], 
                                            max_workers: int = 10) -> Dict[str, bool]:

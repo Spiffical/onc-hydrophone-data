@@ -60,9 +60,11 @@ print(f"Data will be saved under: {data_dir}")
 ```
 
 If that prints a path without raising an error, configuration is ready. The
-token itself is intentionally not printed.
+token itself is intentionally not printed. `load_config()` only reads `.env`;
+the first ONC request in the next step confirms that ONC accepts the token.
 
 ## Next step
 
-Continue to **[2. Find a Hydrophone](inventory.md)** to choose a device code and
-valid dates before downloading anything.
+Continue to **[2. Find a Hydrophone](inventory.md)** to list the available
+hydrophones and choose a device code and valid dates before downloading
+anything.
